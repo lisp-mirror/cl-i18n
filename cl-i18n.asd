@@ -8,12 +8,12 @@
 
 (defsystem cl-i18n
   :name "cl-i18n"
-  :version "0.1"
+  :version "0.3"
   :maintainer "Leslie P. Polzer <polzer@stardawn.org>"
   :author "Leslie P. Polzer <polzer@stardawn.org>"
   :licence "LLGPL"
-  :description "An internationalisation framework for Common Lisp"
-  :depends-on ()
-  :components ((:file "cl-i18n")))
-
+  :description "A gettext-style internationalisation framework for Common Lisp."
+  :depends-on (:cl-ppcre)
+  :components ((:file "cl-i18n")
+               (:file "i18n-util")))
 

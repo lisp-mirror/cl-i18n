@@ -1,0 +1,68 @@
+
+Prerequisites:
+
+  - ASDF
+  - cl-ppcre if you want to be able to extract translatable strings
+
+
+Installation:
+
+  Start your Lisp image in the cl-i18n directory
+  or add the latter to your ASDF registry:
+
+    (push #p"/path/to/cl-i18n/" asdf:*central-registry*)
+
+  Don't forget the terminating slash.
+
+  Then load with (asdf:oos 'asdf:load-op 'cl-i18n)
+
+
+Usage:
+
+  CL-USER> (asdf:oos 'asdf:load-op 'cl-i18n)
+  T
+
+  CL-USER> (format t "The application encountered an error: ~A!~%" #!"Success")
+  WARNING: cl-i18n: translation table not initialized! Call “load-language” first.
+  WARNING: cl-i18n: no translation for "Success" defined!
+  The application encountered an error: Success!
+  NIL
+
+  CL-USER> (cl-i18n:load-language "klingon") ; load translations
+                                             ; from ./klingon.lisp
+
+  ; this file might look like this:
+  ;
+  ; (
+  ;   "Greetings" -> "nuqneH"
+  ;   "Success"   -> "Qapla’"
+  ; )
+  ;
+  ; The -> can be an arbitrary unquoted symbol name.
+  ; Whitespace including newlines doesn't matter except in strings.
+
+  inserted Greetings:nuqneH
+  inserted Success:Qapla’
+  #<HASH-TABLE :TEST EQUAL :COUNT 2 {A84F021}>
+
+  CL-USER> (format t "The application encountered an error: ~A!~%" #!"Success")
+  The application encountered an error: Qapla’!
+  NIL
+
+
+  Extracting translatable strings:
+
+    (i18n-util:generate-i18n-file "gowron-monologue.lisp" "klingon.lisp")
+
+  Will extract all #! strings from gowron-monologue.lisp and setup a basic
+  translation resource in klingon.lisp.
+
+  ATTENTION! This will overwrite the target file. Merging is not possible,
+  yet.
+
+
+Contributors:
+
+  Leslie P. Polzer <polzer@stardawn.org> (base)
+  Vilson Vieira <vilson@void.cc> (string extractor)
+
