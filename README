@@ -52,13 +52,10 @@ Usage:
 
   Extracting translatable strings:
 
-    (i18n-util:generate-i18n-file "gowron-monologue.lisp" "klingon.lisp")
+    (cl-i18n:generate-i18n-file "gowron-monologue.lisp" "klingon.lisp")
 
-  Will extract all #! strings from gowron-monologue.lisp and setup a basic
+  Will extract all #! strings from gowron-monologue.lisp and set up a basic
   translation resource in klingon.lisp.
-
-  ATTENTION! This will overwrite the target file. Merging is not possible,
-  yet.
 
 
 Contributors:

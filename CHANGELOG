@@ -1,0 +1,13 @@
+Version 0.4
+2007-01-07
+Support for merging translation strings (by Vilson Vieira)
+Refactoring of code
+
+Version 0.3
+2007-01-07
+Support for extraction of translatable strings (by Vilson Vieira)
+
+Version 0.2
+2007-01-04
+Initial public release (by Leslie P. Polzer)
+
