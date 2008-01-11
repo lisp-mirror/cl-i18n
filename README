@@ -57,6 +57,10 @@ Usage:
   Will extract all #! strings from gowron-monologue.lisp and set up a basic
   translation resource in klingon.lisp.
 
+  To make it work with CL-WHO, use the “str” directive, as in
+
+    (with-html-output *out*
+      (:p (str #!"Blood and honour!")))
 
 Contributors:
 
