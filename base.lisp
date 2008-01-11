@@ -28,8 +28,11 @@
 
 (defun load-language (lang)
   "Load a language that will be used for all subsequent translations."
-  (init-translation-table (concatenate 'string
-                                       *translation-file-root* "/" lang ".lisp")))
+  (init-translation-table (concatenate 'string *translation-file-root* "/"
+                                       (etypecase lang
+                                         (string lang)
+                                         (symbol (string-downcase (symbol-name lang))))
+                                       ".lisp")))
 
 (defun translate (str)
   "Translate a string. This will warn if the translation table has not been
