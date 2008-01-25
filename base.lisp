@@ -1,13 +1,17 @@
 
 (in-package :cl-i18n)
 
-(export '(load-language translate *translation-file-root*))
+(export '(load-language translate *translation-file-root*
+          random-string))
 
 (defvar *translation-file-root* "."
   "The directory where translation files are stored.
   Defaults to current directory.")
 
 (defvar *translation-table* (make-hash-table :test 'equal))
+
+(defun random-string (strings)
+  (nth (random (list-length strings)) strings))
 
 (defun translation-list->hash-table (list ht)
   "Parse a list of the form (string delim translation) into a hash table,
@@ -16,8 +20,7 @@
         and translation = (third list)
         do (progn
              (setf list (cdddr list))
-             (setf (gethash str ht) translation)
-             (format t "inserted ~A:~A~%" str translation))
+             (setf (gethash str ht) translation))
         until (equal list nil))
   ht)
 
@@ -41,9 +44,11 @@
   (if (eql (hash-table-count *translation-table*) 0)
     (warn "cl-i18n: translation table not initialized! Call “load-language” first."))
   (multiple-value-bind (translation found) (gethash str *translation-table*)
-    (if (not found)
+    (if (or (not found) (equal translation ""))
       (progn (warn "cl-i18n: no translation for ~S defined!" str) str)
-      translation)))
+      (etypecase translation
+        (string translation)
+        (cons (apply (first translation) (rest translation)))))))
 
 (defun read-lisp-string (input)
   "Parse a Lisp string. Expects “input” to point to the
