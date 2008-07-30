@@ -21,10 +21,10 @@
 	and value being the hash-values of ht
 	collect (format nil "~s -> ~s~%" key value)))
 
-(defun save-language (lang)
+(defun save-language (lang &optional destination)
   (with-open-file (file 
-		    (concatenate 'string
-				 *translation-file-root* "/" lang ".lisp")
+		    (or destination
+                        (concatenate 'string *translation-file-root* "/" lang ".lisp"))
 		    :if-does-not-exist :create
 		    :if-exists :supersede
 		    :direction :output)
