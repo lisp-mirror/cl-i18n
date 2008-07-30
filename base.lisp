@@ -1,7 +1,8 @@
 
 (in-package :cl-i18n)
 
-(export '(load-language translate *translation-file-root*
+(export '(load-language save-language translate
+          *translation-file-root* *translation-collect*
           random-string))
 
 (defvar *translation-file-root* "."
@@ -12,6 +13,22 @@
 
 (defun random-string (strings)
   (nth (random (list-length strings)) strings))
+
+(defvar *translation-collect* nil)
+
+(defun translation-hash-table->list (ht)
+  (loop for key being the hash-keys of ht
+	and value being the hash-values of ht
+	collect (format nil "~s -> ~s~%" key value)))
+
+(defun save-language (lang)
+  (with-open-file (file 
+		    (concatenate 'string
+				 *translation-file-root* "/" lang ".lisp")
+		    :if-does-not-exist :create
+		    :if-exists :supersede
+		    :direction :output)
+    (format file "~a" (translation-hash-table->list *translation-table*))))
 
 (defun translation-list->hash-table (list ht)
   "Parse a list of the form (string delim translation) into a hash table,
@@ -41,14 +58,17 @@
   "Translate a string. This will warn if the translation table has not been
   initialized beforehand. If the string doesn't have a translation a warning
   is emitted as well and the original string returned."
-  (if (eql (hash-table-count *translation-table*) 0)
-    (warn "cl-i18n: translation table not initialized! Call “load-language” first."))
+  (if (and (eql (hash-table-count *translation-table*) 0) (not *translation-collect*))
+    (progn #+?(warn "cl-i18n: translation table not initialized! Call “load-language” first.")))
   (multiple-value-bind (translation found) (gethash str *translation-table*)
     (if (or (not found) (equal translation ""))
-      (progn (warn "cl-i18n: no translation for ~S defined!" str) str)
-      (etypecase translation
+      (if *translation-collect*
+        (setf (gethash str *translation-table*) str)
+        (progn #+?(warn "cl-i18n: no translation for ~S defined!" str) str))
+      (typecase translation
         (string translation)
-        (cons (apply (first translation) (rest translation)))))))
+        (cons (apply (first translation) (rest translation)))
+        (t (format nil "~A" translation))))))
 
 (defun read-lisp-string (input)
   "Parse a Lisp string. Expects “input” to point to the
@@ -63,6 +83,9 @@
           (#\"
            (return)))
         (write-char char output)))))
+
+;(when (get-dispatch-macro-character #\# #\@)
+;    (error "Someone is already using #@"))
 
 (set-dispatch-macro-character #\# #\!
   #'(lambda (stream char1 char2)

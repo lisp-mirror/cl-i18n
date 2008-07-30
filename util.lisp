@@ -28,7 +28,7 @@
 (defun get-strings (filename)
   "Uses CL-PPCRE to get all strings on the form #!\"foo\",
   and collect them uniquely in a list."
-  (loop for each in (remove-duplicates (cl-ppcre:all-matches-as-strings "#!\".*\"" (slurp-file filename)) :test #'string=)
+  (loop for each in (remove-duplicates (cl-ppcre:all-matches-as-strings "\".*?\"" (slurp-file filename)) :test #'string=)
      collect (list (cl-ppcre:regex-replace-all "(#!|\")" each "") "")))
 
 (defun read-i18n-file (filename)
