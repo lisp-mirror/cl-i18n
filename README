@@ -1,8 +1,10 @@
-
 Prerequisites:
 
   - ASDF
   - cl-ppcre if you want to be able to extract translatable strings
+  - osicat
+  - alexandria
+
 
 
 Installation:
@@ -31,19 +33,18 @@ Usage:
   CL-USER> (cl-i18n:load-language "klingon") ; load translations
                                              ; from ./klingon.lisp
 
-  ; this file might look like this:
-  ;
-  ; (
-  ;   "Greetings" -> "nuqneH"
-  ;   "Success"   -> "Qapla’"
-  ; )
-  ;
-  ; The -> can be an arbitrary unquoted symbol name.
-  ; Whitespace including newlines doesn't matter except in strings.
-
-  inserted Greetings:nuqneH
-  inserted Success:Qapla’
-  #<HASH-TABLE :TEST EQUAL :COUNT 2 {A84F021}>
+(
+	id "Greetings"
+	translation "nuqneH"
+	plurals-form "nuqneH"
+	status :TRANSLATED
+	plurals NIL
+	id "Success"
+	translation "Qapla’"
+	plurals-form "Qapla’"
+	status :TRANSLATED
+	plurals NIL
+)
 
   CL-USER> (format t "The application encountered an error: ~A!~%" #!"Success")
   The application encountered an error: Qapla’!

@@ -7,25 +7,92 @@
 
 (in-package :cl-i18n)
 
-(export '(load-language save-language translate
-          *translation-file-root* *translation-collect*
-          random-string))
 
-(defvar *translation-file-root* "."
+(defparameter *translation-file-root* "."
   "The directory where translation files are stored.
   Defaults to current directory.")
 
-(defvar *translation-table* (make-hash-table :test 'equal))
+(defparameter *plural-form-function* #'n/=1-plural-form)
+
+(defparameter *translation-table* (make-hash-table :test 'equal))
 
 (defun random-string (strings)
   (nth (random (list-length strings)) strings))
 
-(defvar *translation-collect* nil)
+(defparameter *translation-collect* nil)
+
+(alexandria:define-constant +fuzzy-flag+ :fuzzy :test 'eq)
+(alexandria:define-constant +untranslated-flag+ :untranslated :test 'eq)
+(alexandria:define-constant +translated-flag+ :translated :test 'eq)
+
+
+(alexandria:define-constant +id+ "id" :test 'string=)
+(alexandria:define-constant +translation+ "translation" :test 'string=)
+(alexandria:define-constant +plurals-form+ "plurals-form" :test 'string=)
+(alexandria:define-constant +status+ "status" :test 'string=)
+(alexandria:define-constant +plurals+ "plurals" :test 'string=)
+
+
+(defclass translation ()
+  ((translated
+    :initform ""
+    :initarg  :translated
+    :accessor translated
+    :type 'string)
+   (plural-form
+    :initform ""
+    :initarg  :plural-form
+    :accessor plural-form
+    :type 'string)
+   (plural-translated
+    :initform ""
+    :initarg  :plural-translated
+    :accessor plural-translated
+    :type 'list)
+   (flag
+    :initform +untranslated-flag+
+    :initarg  :flag
+    :accessor flag)))
+
+(defmethod print-object ((object translation) stream)
+  (format nil "~a ~s~%~a ~s~%~a ~s~%~a ~s~%"
+	  +translation+ (translated object) 
+	  +plurals-form+ (plural-form object)
+	  +status+       (flag object)
+	  +plurals+ (plural-translated object)))
+
+(defmethod make-load-form ((object translation) &optional environment)
+  (make-load-form-saving-slots object
+			       :slot-names '(translated plural-form plural-translated flag)
+			       :environment environment))
+
+(defgeneric copy-translation (object old))
+
+(defmethod copy-translation ((object translation) (old translation))
+  (setf (translated object) (translated old))
+  (setf (plural-form object) (plural-form old))
+  (setf (plural-translated object) (copy-list (plural-translated old)))
+  (setf (flag object) (flag old))
+  object)
+  
+
+(defun make-translation (translation &optional (flag +untranslated-flag+)
+			 (plural-form "") (plural-translated '()))
+  (make-instance 'translation 
+		 :translated translation
+		 :flag       flag
+		 :plural-form plural-form
+		 :plural-translated plural-translated))
 
 (defun translation-hash-table->list (ht)
   (loop for key being the hash-keys of ht
 	and value being the hash-values of ht
-	collect (format nil "~s -> ~s~%" key value)))
+	collect (format nil "~a ~s~%~a ~s~%~a ~s~%~a ~s~%~a ~s~%"
+			+id+ key 
+			+translation+ (translated value) 
+			+plurals-form+ (plural-form value)
+			+status+       (flag value)
+			+plurals+ (plural-translated value))))
 
 (defun save-language (lang &optional destination)
   (with-open-file (file 
@@ -36,21 +103,37 @@
 		    :direction :output)
     (format file "~a" (translation-hash-table->list *translation-table*))))
 
-(defun translation-list->hash-table (list ht)
-  "Parse a list of the form (string delim translation) into a hash table,
-  ignoring delim."
-  (loop for str = (first list)
-        and translation = (third list)
-        do (progn
-             (setf list (cdddr list))
-             (setf (gethash str ht) translation))
-        until (equal list nil))
+(defgeneric translation-list->hash-table (source dest))
+
+(defmethod translation-list->hash-table ((list list) (ht hash-table))
+  "Parse a list into a hash table."
+  (when (and (> (length list) 0)
+	 (= (mod (length list) 10) 0))
+    (loop 
+       for str = (nth 1 list)
+       and translation = (nth 3 list)
+       and plural-form = (nth 5 list)
+       and flag        = (nth 7 list)
+       and plurals     = (nth 9 list)
+       do (progn
+	    (setf list (subseq list 10))
+	    (setf (gethash str ht) (make-translation translation flag plural-form plurals)))
+       until (equal list nil)))
   ht)
 
-(defun init-translation-table (filename)
-  "Load translations from a file, storing them in a hash table."
+(defun init-translation-table (filename &key (store-results t) (update-translation-table t))
+  "Load translations from a file, storing them in a hash table.
+   if store-results is t *translation-table* is setf'd to the loaded table"
   (with-open-file (file filename)
-    (setf *translation-table* (translation-list->hash-table (read file) *translation-table*))))
+    (let ((t-table (translation-list->hash-table (read file)
+						 (if update-translation-table
+						     *translation-table*
+						     (make-hash-table :test 'equal)))))
+      (if store-results
+	  (setf *translation-table* t-table)
+	  t-table))))
+
+
 
 (defun load-language (lang)
   "Load a language that will be used for all subsequent translations."
@@ -58,26 +141,63 @@
                                        (etypecase lang
                                          (string lang)
                                          (symbol (string-downcase (symbol-name lang))))
-                                       ".lisp")))
+                                       ".lisp")
+			  :store-results t
+			  :update-translation-table t))
+
 
 (defun translate (str)
-  "Translate a string. This will warn if the translation table has not been
-  initialized beforehand. If the string doesn't have a translation a warning
-  is emitted as well and the original string returned."
-  (if (and (eql (hash-table-count *translation-table*) 0) (not *translation-collect*))
-    (progn #+?(warn "cl-i18n: translation table not initialized! Call “load-language” first.")))
+  "Translate a string. This will raise an error if the translation table has not been
+   initialized beforehand. If the string doesn't have a translation a warning
+   is emitted as well and the original string returned."
+  (restart-case
+    (when (and (eql (hash-table-count *translation-table*) 0) (not *translation-collect*))
+      (error 'conditions:no-translation-table-error :text "cl-i18n: translation table not initialized! Call \"load-language\" first."))
+    (load-language (value) (load-language value))
+    (use-value (value) (setf *translation-table* value)))
   (multiple-value-bind (translation found) (gethash str *translation-table*)
-    (if (or (not found) (equal translation ""))
-      (if *translation-collect*
-        (setf (gethash str *translation-table*) str)
-        (progn #+?(warn "cl-i18n: no translation for ~S defined!" str) str))
-      (typecase translation
-        (string translation)
-        (cons (apply (first translation) (rest translation)))
-        (t (format nil "~A" translation))))))
+    (if (or (not found) (string= (translated translation) ""))
+	(if *translation-collect*
+	    (setf (gethash str *translation-table*) (make-translation str))
+	    (progn
+	      (warn 'conditions:no-translation 
+		    :text (format nil "cl-i18n: no translation for ~S defined!" str))
+	      str))
+	(typecase translation
+	  (translation (translated translation))
+	  (string translation)
+	  (cons (apply (first translation) (rest translation)))
+	  (t (format nil "~A" translation))))))
 
+
+(defun ntranslate (str1 str2 n)
+  "Translate a string guessing a plural form.
+   str1 is the string to be translated
+   str2 is the fallback plural form
+   n is the number of the objects
+   First str1 is checked to get the translated object, if found 
+   the nth element (as computed by the function *plural-form-function*) 
+   of its plural-translated slot is used as plural form.
+   If this index is less than 0 or more than the length of plural-translated
+   ntranslate return str2.
+   If the translation object does not exists str2 is returned"
+  (let ((translation (gethash str1 *translation-table*)))
+    (if (not (null translation))
+	(let ((index (funcall *plural-form-function* n)))
+	  (if (> index 0)
+	      (let ((plural-translation (nth (1- index)
+					     (plural-translated translation))))
+		(if (not (null plural-translation))
+		    plural-translation
+		    str2))
+	      (translated translation)))
+	(if (= n 1)
+	    str1
+	    str2))))
+
+	   
 (defun read-lisp-string (input)
-  "Parse a Lisp string. Expects “input” to point to the
+  "Parse a Lisp string. Expects \"input\" to point to the
   first character after the leading double quote.
   Slick version by Xach."
   (with-output-to-string (output)
@@ -93,10 +213,22 @@
 ;(when (get-dispatch-macro-character #\# #\@)
 ;    (error "Someone is already using #@"))
 
+(defmacro with-translation ((translations plural-function) &body body)
+  "Macro to switch between language at runtime"
+  `(let ((*translation-table* ,translations)
+	 (*plural-form-function* #',plural-function))
+     ,@body))
+
 (set-dispatch-macro-character #\# #\!
   #'(lambda (stream char1 char2)
       (declare (ignore char1 char2))
       (if (char= (read-char stream) #\")
         `(translate ,(read-lisp-string stream))
         (error "cl-i18n: the read macro `#!' must precede a double-quoted string!"))))
+
+(set-dispatch-macro-character #\# #\§ 
+  #'(lambda (stream char1 num)
+      (declare (ignore char1))
+      `(cl-i18n:ntranslate ,(read stream) ,(read stream) ,num)))
+      
 

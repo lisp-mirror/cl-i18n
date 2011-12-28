@@ -1,3 +1,13 @@
+Version 0.4.1
+2011-12-28
+- File format of the translation table changed;
+- Added a simple method to deal with plural form;
+- Added  an an  approximated  matching algorithm  in  the file  scanning
+  routines for translatable string;
+- Added examples directory;
+- Refactoring of code.
+
+
 Version 0.4
 2007-01-07
 Support for merging translation strings (by Vilson Vieira)
