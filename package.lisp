@@ -24,6 +24,9 @@
 	     :n/=1-plural-form
 	     :english-plural-form
 	     :italian-plural-form
+	     :spanish-plural-form
+	     :polish-plural-form
+	     :slovenian-plural-form
 	     :translation-list->hash-table
 	     :translation-hash-table->list
 	     :init-translation-table
@@ -34,6 +37,7 @@
 	     :with-translation
 	     :*translation-file-root* 
 	     :*translation-collect*
+	     :*plural-form-function*
 	     :random-string
 	     :+fuzzy-flag+
 	     :+untranslated-flag+

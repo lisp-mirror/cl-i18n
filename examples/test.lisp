@@ -8,7 +8,7 @@
 (require 'cl-i18n)
 (in-package :cl-i18n)
 
-(setf cl-i18n:*translation-file-root* "/examples/locale/");   change
+(setf cl-i18n:*translation-file-root* "cl-i18n/examples/locale/");   change
 							; accordingly
 							; to        the
 							; actual
@@ -22,10 +22,9 @@
 
 
 
+(setf cl-i18n:*plural-form-function* #'cl-i18n:italian-plural-form)
 
-;; Or you can use (load-language italian)
-
-(handler-bind ((conditions:no-translation-table-error
+(handler-bind ((conditions:no-translation-table-error ;; Or just (load-language "italian")
 		#'(lambda(e)
 		    (declare (ignore e))
 		    (invoke-restart 'load-language "italian"))))
@@ -36,10 +35,16 @@
 
 
 
-(cl-i18n:with-translation ((cl-i18n:init-translation-table
-			   "/examples/locale/spanish.lisp"
+(cl-i18n:with-translation ((cl-i18n:init-translation-table  ;; or pass
+							   ;; a
+							   ;; previously
+							   ;; loaded
+							   ;; hashtable
+							   ;; of
+							   ;; course
+			   "cl-i18n/examples/locale/spanish.lisp"
 			   :store-results nil :update-translation-table nil)
-			   cl-i18n:n/=1-plural-form)
+			   cl-i18n:spanish-plural-form)
 
   (format t "~a ~a~%" 1 #!"apple")
   (format t "~a ~a~%" 1 #!"pie")

@@ -30,3 +30,33 @@
   (if (/= n 1)
       1
       0))
+
+(define-plural-form (spanish)
+  (if (/= n 1)
+      1
+      0))
+
+(define-plural-form (polish)
+  (cond
+    ((or (= n 0)
+	 (= n 1))
+     0)
+    ((and (>= (mod n 10) 2)
+	  (<= (mod n 10) 4)
+	  (or (< (mod n 100) 10)
+	      (>= (mod n 100) 20)))
+     1)
+    (t 2)))
+      
+
+(define-plural-form (slovenian)
+    (cond
+      ((or (= n 0)
+	   (= (mod n 100) 1))
+       0)
+      ((= (mod n 100) 2)
+       1)
+      ((or (= (mod n 100) 3)
+	   (= (mod n 100) 4))
+       2)
+      (t 3)))

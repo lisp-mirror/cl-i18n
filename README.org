@@ -1,0 +1,54 @@
+* Prerequisites:
+- ASDF
+- cl-ppcre if you want to be able to extract translatable strings
+- osicat
+- alexandria
+
+
+
+* Installation:
+
+The  best  way   to  get  cl-i18n  working  is   using  the  excellent
+[[http://www.quicklisp.org][quicklisp]]:
+
+#+BEGIN_SRC common-lisp
+(ql:quickload "cl-i18n")
+#+END_SRC
+
+* Usage
+  Check the examples/ directory for a usage examples.
+
+* Extracting translatable strings:
+
+#+BEGIN_SRC common-lisp
+(cl-i18n-utils:gen-translation-file ("/src/" "klingon.lisp" :ext "lisp$"))
+#+END_SRC
+
+Will extract  all #!  strings from all  the files in  directory "/src/"
+which name ends  in "lisp" and set up a  basic translation resource in
+klingon.lisp (*Note: the output file if exists will be overwritten*).
+
+To make it work with CL-WHO, use the “str” directive, as in
+#+BEGIN_SRC common-lisp
+    (with-html-output *out*
+      (:p (str #!"Blood and honour!")))
+#+END_SRC
+
+
+
+* Old version incompatibility
+
+This version deeply changed the  file format of the translation table,
+however you can convert from the old format to the new one with:
+
+#+BEGIN_SRC common-lisp
+(cl-i18n-utils:convert-save-dictionary oldfile-path new-filepath)
+#+END_SRC
+
+*Note: the output file if exists will be overwritten*
+
+* Contributors:
+
+- Leslie P. Polzer <polzer@stardawn.org> (base)
+- Vilson Vieira <vilson@void.cc> (string extractor)
+- Cage <cage@katamail.com> (development and maintainer) 
