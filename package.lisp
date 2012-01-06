@@ -22,11 +22,40 @@
 	     :make-translation
 	     :define-plural-form
 	     :n/=1-plural-form
-	     :english-plural-form
-	     :italian-plural-form
-	     :spanish-plural-form
-	     :polish-plural-form
-	     :slovenian-plural-form
+	     :english-plural-form 
+	     :german-plural-form
+	     :dutch-plural-form 
+	     :swedish-plural-form 
+	     :danish-plural-form 
+	     :norwegian-plural-form 
+	     :faroese-plural-form 
+	     :spanish-plural-form 
+	     :portuguese-plural-form 
+	     :italian-plural-form 
+	     :bulgarian-plural-form 
+	     :greek-plural-form 
+	     :finnish-plural-form 
+	     :estonian-plural-form 
+	     :hebrew-plural-form 
+	     :esperanto-plural-form 
+	     :hungarian-plural-form 
+	     :turkish-plural-form 
+	     :polish-plural-form 
+	     :slovenian-plural-form 
+	     :czech-plural-form 
+	     :slovak-plural-form 
+	     :russian-plural-form 
+	     :ukrainian-plural-form 
+	     :serbian-plural-form 
+	     :croatian-plural-form 
+	     :brazilian-plural-form 
+	     :portuguese-plural-form 
+	     :french-plural-form 
+	     :latvian-plural-form 
+	     :gaeilge-plural-form 
+	     :irish-plural-form 
+	     :romanian-plural-form 
+	     :lithuanian-plural-form
 	     :translation-list->hash-table
 	     :translation-hash-table->list
 	     :init-translation-table
