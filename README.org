@@ -9,7 +9,9 @@
 * Installation:
 
 The  best  way   to  get  cl-i18n  working  is   using  the  excellent
-[[http://www.quicklisp.org][quicklisp]]:
+[[http://www.quicklisp.org][quicklisp]]
+
+*please note that currently (2012-01-06) the old version 0.4 is included*
 
 #+BEGIN_SRC common-lisp
 (ql:quickload "cl-i18n")
