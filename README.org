@@ -18,7 +18,7 @@ The  best  way   to  get  cl-i18n  working  is   using  the  excellent
 #+END_SRC
 
 * Usage
-  Check the examples/ directory for a usage examples.
+  Check the examples/ directory for an usage examples.
 
 * Extracting translatable strings:
 
