@@ -1,0 +1,55 @@
+pofile := header msg*
+
+header := msgid '""' newline  msgstr_header newline
+
+msgstr_header := msgstr escaped_string* plurar_string escaped_string* newline
+
+plural_string := '"Plural-Forms:' plurar_number_expr plural_expression_string
+
+plural_expression_string := 'plural=' plural_expression
+
+plural_number_expr := 'nplural=' number end_expression
+
+msg := comments* flag_comment? comments* msgid escaped_string* newline
+    (msgid_plural escaped_string newline (msg_str_plural)+ ) |
+    (msg_str escaped_string*)
+
+flag_comment := '#,' string newline
+
+msg_str_plural:= 'msgstr[' number ']' escaped_string* newline
+
+comment := '#' newline | '^#[^,].*' newline
+
+msgstr := 'msgstr'
+
+msgid := 'msgid'
+
+msgid_plural := 'msgid_plural'
+
+newline = ascii code 10
+
+plural_expression := (number | boolean_expression | ternary_expression) end_expression
+
+ternary_expression := boolean_expression '?' expression ':' expression
+
+expression := ternary_expression | number
+
+boolean_expression := arithmetic_expression                              |
+		   '(' boolean_expression ')'                           |
+                   boolean_expression   boolean_op boolean_expression   |
+                   boolean_expression   boolean_op arithmetic_expression |
+		   arithmetic_expression boolean_op boolean_expression   |
+		   arithmetic_expression boolean_op arithmetic_expression |
+
+arithmetic_expression := 'n' comparision_op number |
+                        'n' arithmetic_op number comparision_op number 
+
+boolean_op := '&&' | '||'
+
+arithmetic_op :=  '%'
+
+comparision_op := '<' | '>' | '<=' | '>=' | '!=' | '==' 
+
+number := 0|[1-9][0-9]+|[1-9]
+
+end_expression := ';'

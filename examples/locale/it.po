@@ -1,0 +1,44 @@
+# Example Italian translations for cl-i18n package.
+# Copyright (C) 2012 cage
+# This file is distributed under the same license as the cl-i18n package.
+# cage <cage@katamail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cl-i18n\n"
+"Report-Msgid-Bugs-To: cage@katamail.com\n"
+"POT-Creation-Date: 2012-01-02 12:32+0200\n"
+"PO-Revision-Date: 2012-02-01 19:14+0100\n"
+"Last-Translator: cage <cage@katamail.com>\n"
+"Language-Team: Italian <tp@lists.linux.it>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ex1.lisp:1
+#: src/ex2.lisp:2
+#, fuzzy
+msgid "p"
+      "ie"
+msgid_plural "pies"
+msgstr[0] "torta"
+msgstr[1] "torte"
+
+#: src/ex1.lisp:3
+#: src/ex2.lisp:4
+msgid "a" "p" "ple"
+msgid_plural "apples"
+msgstr[0] "mela"
+msgstr[1] "mele"
+
+#: src/ex1.lisp:3
+#: src/ex2.lisp:4
+msgid "Invalid argument"
+msgstr "Argomento non valido"
+
+
+
+
+

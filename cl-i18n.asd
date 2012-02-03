@@ -32,5 +32,7 @@
                (:file "base" 
 		      :depends-on ("plural-forms"))
                (:file "util" 
+		      :depends-on ("base"))
+	       (:file "pofile"
 		      :depends-on ("base"))))
 

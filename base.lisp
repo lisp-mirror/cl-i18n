@@ -35,6 +35,11 @@
 (alexandria:define-constant +plurals+ "plurals" :test 'string=)
 
 
+(alexandria:define-constant +pofile-ext+ "po$" :test 'string=)
+(alexandria:define-constant +lisp-table-ext+ "lisp$" :test 'string=)
+
+
+
 (defclass translation ()
   ((translated
     :initform ""
@@ -133,25 +138,41 @@
 
 (defun init-translation-table (filename &key (store-results t) (update-translation-table t))
   "Load translations from a file, storing them in a hash table.
-   if store-results is t *translation-table* is setf'd to the loaded table"
-  (with-open-file (file filename)
-    (let ((t-table (translation-list->hash-table (read file)
-						 (if update-translation-table
-						     *translation-table*
-						     (make-hash-table :test 'equal)))))
-      (if store-results
-	  (setf *translation-table* t-table)
-	  t-table))))
+   if store-results is t *translation-table* is setf'd to the loaded table
+   If the file is in gettext po file format the *plural-form-function* is setf'd too"
+  (let ((t-table (make-hash-table :test 'equal)))
+    (cond
+      ((scan +pofile-ext+ filename)
+       (with-po-file ((cl-i18n-utils:slurp-file filename))
+	 (multiple-value-bind (hashtable plural-function errorsp errors)
+	     (parse-po-file)
+	   (if errorsp
+	       (error 'conditions:parsing-pofile-error :text (format nil "~{~a~}" errors))
+	       (progn
+		 (setf *plural-form-function* plural-function)
+		 (setf t-table hashtable))))))
+      ((scan +lisp-table-ext+ filename)
+       (with-open-file (file filename)
+	 (setf t-table (translation-list->hash-table (read file) 
+						     (make-hash-table :test 'equal))))))
+
+    	 (when update-translation-table
+	     (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v)) 
+		      *translation-table*))
+					
+	 (if store-results
+	     (setf *translation-table* t-table)
+	     t-table)))
 
 
 
-(defun load-language (lang)
+(defun load-language (lang &key (file-format "lisp"))
   "Load a language that will be used for all subsequent translations."
   (init-translation-table (concatenate 'string *translation-file-root* "/"
                                        (etypecase lang
                                          (string lang)
                                          (symbol (string-downcase (symbol-name lang))))
-                                       ".lisp")
+                                       "." file-format)
 			  :store-results t
 			  :update-translation-table t))
 

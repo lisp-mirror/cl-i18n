@@ -8,7 +8,7 @@
 (require 'cl-i18n)
 (in-package :cl-i18n)
 
-(setf cl-i18n:*translation-file-root* "cl-i18n/examples/locale/");   change
+(setf cl-i18n:*translation-file-root* "/cl-i18n/examples/locale/");   change
 							; accordingly
 							; to        the
 							; actual
@@ -35,18 +35,19 @@
 
 
 
-(cl-i18n:with-translation ((cl-i18n:init-translation-table  ;; or pass
+(cl-i18n:with-translation ((cl-i18n:init-translation-table ;; or pass
 							   ;; a
 							   ;; previously
 							   ;; loaded
 							   ;; hashtable
 							   ;; of
 							   ;; course
-			   "cl-i18n/examples/locale/spanish.lisp"
+			   "/cl-i18n/examples/locale/it.po"
 			   :store-results nil :update-translation-table nil)
 			   cl-i18n:spanish-plural-form)
-
   (format t "~a ~a~%" 1 #!"apple")
   (format t "~a ~a~%" 1 #!"pie")
-  (format t "~a ~a~%" 4 (cl-i18n:ntranslate "apple" "apples" 4)))
+  (format t "~a ~a~%" 4 (cl-i18n:ntranslate "pie" "pies" 4))
+  (format t "~a ~a~%" 4 (cl-i18n:ntranslate "apple" "apples" 4))
+  (format t "~a~%" #!"Invalid argument"))
   

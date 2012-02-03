@@ -9,7 +9,7 @@
 * Installation:
 
 The  best  way   to  get  cl-i18n  working  is   using  the  excellent
-[[http://www.quicklisp.org][quicklisp]]
+[[http://www.quicklisp.org/][quicklisp]]
 
 *please note that currently (2012-01-06) the old version 0.4 is included*
 
@@ -37,7 +37,6 @@ To make it work with CL-WHO, use the “str” directive, as in
 #+END_SRC
 
 
-
 * Old version incompatibility
 
 This version deeply changed the  file format of the translation table,
@@ -48,6 +47,10 @@ however you can convert from the old format to the new one with:
 #+END_SRC
 
 *Note: the output file if exists will be overwritten*
+
+* bugs and issues
+
+  Please send all bugs reports to cage@katamail.com
 
 * Contributors:
 

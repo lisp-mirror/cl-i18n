@@ -19,6 +19,12 @@
 (defcond error)
 (defcond warning)
 
+(define-condition parsing-pofile-error (text-error) 
+  ()
+  (:report (lambda (condition stream) 
+	    (format stream "~a" (text condition)))))
+
+
 
 
 (define-condition no-translation-table-error (text-error) 
@@ -32,3 +38,27 @@
   (:report (lambda (condition stream) 
 	     (format stream "~a" (text condition)))))
 
+
+(define-condition text-error (error)
+  ((text 
+    :initarg :text 
+    :reader text))
+  (:documentation "Error that set text"))
+
+(define-condition not-implemented-error (text-error)
+  ()
+  (:documentation "Error for not-implemented features"))
+
+(define-condition null-reference (text-error)
+  ()
+  (:documentation "Null reference"))
+
+
+(define-condition out-of-bounds (error)
+  ((seq
+    :initarg :seq 
+    :reader seq)
+   (idx
+    :initarg :idx 
+    :reader idx))
+   (:documentation "Error when you go out of bound"))

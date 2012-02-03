@@ -9,7 +9,9 @@
 			:cl)
 	    (:export
 	     :no-translation-table-error
-	     :no-translation))
+	     :parsing-pofile-error
+	     :no-translation
+	     :out-of-bounds))
 
 (defpackage :cl-i18n (:use 
 		      :cl
@@ -67,6 +69,8 @@
 	     :*translation-file-root* 
 	     :*translation-collect*
 	     :*plural-form-function*
+	     :*has-error*
+	     :*parsing-errors*
 	     :random-string
 	     :+fuzzy-flag+
 	     :+untranslated-flag+
@@ -84,7 +88,8 @@
 			    :cl
 			    :alexandria
 			    :cl-ppcre)
-	    (:export 
+	    (:export
+	     :slurp-file
 	     :generate-i18n-file
 	     :gen-translation-file
 	     :convert-dictionary-format
