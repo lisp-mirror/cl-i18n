@@ -56,4 +56,4 @@ however you can convert from the old format to the new one with:
 
 - Leslie P. Polzer <polzer@stardawn.org> (base)
 - Vilson Vieira <vilson@void.cc> (string extractor)
-- Cage <cage@katamail.com> (development and maintainer) 
+- Cage <cage@katamail.com> (developer and maintainer) 
