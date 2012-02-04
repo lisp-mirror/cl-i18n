@@ -7,6 +7,7 @@
 
 (in-package :cl-i18n)
 
+(defparameter *debug* nil)
 
 (defparameter *translation-file-root* "."
   "The directory where translation files are stored.
@@ -38,7 +39,9 @@
 (alexandria:define-constant +pofile-ext+ "po$" :test 'string=)
 (alexandria:define-constant +lisp-table-ext+ "lisp$" :test 'string=)
 
-
+(defmacro when-debug (&body body)
+  `(when (not (null *debug*))
+     ,@body))
 
 (defclass translation ()
   ((translated

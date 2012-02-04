@@ -68,6 +68,8 @@
 (defparameter *compar-op* (list +>+ +<+ +>=+ +<=+ +==+ +!=+))
 (defparameter *aritm-op* (list +%+))
 
+
+
 (defparameter *n* 0)
 
 (defun == (&rest args) 
@@ -427,9 +429,15 @@
 	  (when (is-flag-line-p peek)
 	    (next-token)
 	    (setf flag (alexandria:make-keyword (format nil "~:@(~a~)" (next-token)))))
+	  (when-debug
+	    (format t "flag ~s~%errors ~s~%" flag *parsing-errors*))
 	  (let-noerr ((msgid (parse-msgid-group)))
+	    (when-debug
+	      (format t "msgid ~s errors ~s~%" msgid *parsing-errors*))
 	    (multiple-value-bind (first-translation plural-forms)
 		(parse-msgstr-group)
+	      (when-debug
+		(format t "msgsrt ~s ~s~%errors ~s~%" first-translation plural-forms *parsing-errors*))
 	      (let ((translation (make-translation 
 				  (if (not (null plural-forms))
 				      (first plural-forms)
@@ -468,7 +476,8 @@
   (with-no-errors
     (parse-msgstr-plural)
     (let-noerr ((string (parse-escaped-string)))
-      (if (is-msgstr[]-p (peek-token))
+      (if (and (peek-valid-stream)
+	       (is-msgstr[]-p (peek-token)))
 	  (progn 
 	    (parse-msgstr-plural-group (push string res)))
 	  (reverse (push string res))))))
@@ -478,10 +487,15 @@
   (parse-msgid-group)
   (parse-msgstr)
   (let-noerr ((header (parse-escaped-string)))
+    (when-debug
+      (format t "header~%~s~%" header))
     (with-po-file ((cl-ppcre:regex-replace-all "(?m)\\n" header " "))
       (with-no-errors 
 	(next-token :hook-to-stringpos nil) ;; the plural expression stars here
-	(let ((fun (parse-plural-expression)))
+	(multiple-value-bind (fun stack)
+	    (parse-plural-expression)
+	  (when-debug
+	    (format t "stack (~%~{~s~%~})~% 1 -> ~a~%" stack (funcall fun 1)))
 	  fun)))))
 
 
@@ -609,7 +623,7 @@
 	     (with-no-errors
 	       (push (parse-integer number2) local-stack)
 	       (push (parse-integer number1) local-stack)
-	       (push *n* local-stack)
+	       (push (quote *n*) local-stack)
 	       (push (string->function operator) local-stack)
 	       (push (string->function compare-op) local-stack))))))
       (push local-stack stack))))
@@ -666,6 +680,12 @@
 
 
 ;; some useful test
+;; (with-po-file ((cl-i18n-utils:slurp-file ""))
+;;   (format t "~a~%" *pofile*)
+;;   (multiple-value-bind (hashtable plural-function)
+;;       (parse-po-file)
+;;     (format t "~a~% ~s ~%" (translation-hash-table->list hashtable) plural-function)))
+
 
 ;; (with-po-file ((format nil "0;"))
 ;;   (let ((fun (parse-plural-expression)))

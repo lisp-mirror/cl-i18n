@@ -51,10 +51,13 @@
 
 (defun slurp-file (filename)
   "A simple way to slurp a file."
-  (with-open-file (stream filename :direction :input)
-    (let ((seq (make-string (file-length stream))))
-      (read-sequence seq stream)
-      seq)))
+  (labels ((read-a-char (stream)
+	     (read-char stream nil nil)))
+    (with-open-file (stream filename :direction :input)
+      (do ((res "")
+	   (char (read-a-char stream) (read-a-char stream)))
+	  ((not char) (reverse res))
+	(setf res (concatenate 'string (string char) res))))))
 
 (defun get-strings (filename)
   "Uses CL-PPCRE to get all strings on the form #!\"foo\",
