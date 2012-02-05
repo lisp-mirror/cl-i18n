@@ -8,7 +8,7 @@
 (in-package :cl-i18n)
 
 
-(defparameter *debug* t)
+(defparameter *debug* nil)
 (alexandria:define-constant +pofile-ext+ "po$" :test 'string=)
 (alexandria:define-constant +lisp-table-ext+ "lisp$" :test 'string=)
 
