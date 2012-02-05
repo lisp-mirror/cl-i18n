@@ -250,7 +250,7 @@
 	  (setf *string-pos* start-token)))))
 
 (defmacro with-valid-stream (&body body)
-  `(with-error (#'peek-valid-stream #!"Attempt to read an empty stream")
+  `(with-error (#'peek-valid-stream "Attempt to read an empty stream")
      ,@body))
 
 
@@ -680,12 +680,14 @@
 
 
 ;; some useful test
-;; (with-po-file ((cl-i18n-utils:slurp-file ""))
-;;   (format t "~a~%" *pofile*)
-;;   (multiple-value-bind (hashtable plural-function)
-;;       (parse-po-file)
-;;     (format t "~a~% ~s ~%" (translation-hash-table->list hashtable) plural-function)))
-
+ ;; (with-po-file ((cl-i18n-utils:slurp-file ""))
+ ;;   (format t "~a~%" *pofile*)
+ ;;   (multiple-value-bind (hashtable plural-function)
+ ;;       (parse-po-file)
+ ;;     (setf *plural-form-function* plural-function)
+ ;;     (format t "~a~% ~s ~%" (translation-hash-table->list hashtable) plural-function)
+ ;;     (format t "function 100->~a~%" (funcall plural-function 100))
+ ;;     (format t "~a~%" (ntranslate "approximately %'d hour" "approximately %'d hours" 100))))
 
 ;; (with-po-file ((format nil "0;"))
 ;;   (let ((fun (parse-plural-expression)))

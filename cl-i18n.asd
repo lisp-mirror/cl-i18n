@@ -25,14 +25,23 @@
 	       :cl-ppcre
 	       :osicat)
   :components ((:file "package")
+	       (:file "utils"
+		      :depends-on ("package"))
 	       (:file "conditions"
 		      :depends-on ("package"))
 	       (:file "plural-forms"
 		      :depends-on ("package"))
-               (:file "base" 
+	       (:file "translation-class"
 		      :depends-on ("plural-forms"))
-               (:file "util" 
-		      :depends-on ("base"))
 	       (:file "pofile"
+		      :depends-on ("package"
+				   "translation-class"))
+               (:file "base" 
+		      :depends-on ("utils"
+				   "conditions"
+				   "plural-forms"
+				   "translation-class"
+				   "pofile"))
+               (:file "i18n-utils" 
 		      :depends-on ("base"))))
 

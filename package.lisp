@@ -66,6 +66,7 @@
 	     :translate
 	     :ntranslate
 	     :with-translation
+	     :with-po-file
 	     :*translation-file-root* 
 	     :*translation-collect*
 	     :*plural-form-function*
