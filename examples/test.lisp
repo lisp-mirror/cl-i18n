@@ -44,7 +44,7 @@
 							   ;; course
 			   "/cl-i18n/examples/locale/it.po"
 			   :store-results nil :update-translation-table nil)
-			   cl-i18n:*plural-form-function*) ;;loading a po file
+			   cl-i18n:*plural-form-function*) ;;loading a PO file
 						           ;;also           set
 						           ;;*plural-form-function*
   (format t "~a ~a~%" 1 #!"apple")
@@ -52,3 +52,6 @@
   (format t "~a ~a~%" 4 (cl-i18n:ntranslate "pie" "pies" 4))
   (format t "~a ~a~%" 4 (cl-i18n:ntranslate "apple" "apples" 4))
   (format t "~a~%" #!"Invalid argument"))
+
+
+

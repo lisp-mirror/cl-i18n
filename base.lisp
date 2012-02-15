@@ -43,7 +43,7 @@
   (let ((t-table (make-hash-table :test 'equal)))
     (cond
       ((scan +pofile-ext+ filename)
-       (with-po-file ((cl-i18n-utils:slurp-file filename))
+       (with-po-file ((slurp-file filename))
 	 (multiple-value-bind (hashtable plural-function errorsp errors)
 	     (parse-po-file)
 	   (if errorsp
@@ -54,15 +54,27 @@
       ((scan +lisp-table-ext+ filename)
        (with-open-file (file filename)
 	 (setf t-table (translation-list->hash-table (read file) 
-						     (make-hash-table :test 'equal))))))
-
-    	 (when update-translation-table
-	     (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v)) 
-		      *translation-table*))
-					
-	 (if store-results
-	     (setf *translation-table* t-table)
-	     t-table)))
+						     (make-hash-table :test 'equal)))))
+      (t ;;maybe a MO file?
+       (with-mo-file (stream mofile filename)
+	 (parse-mofile mofile stream)
+	 (if (not (null (parsing-errors mofile)))
+	     (error 'conditions:parsing-mofile-error :text (format nil "~{~a~}" (parsing-errors mofile)))
+	     (progn
+	       (mofile->pofile mofile)
+	       (with-po-file ((pofile mofile))
+		 (multiple-value-bind (hashtable plural-function)
+		     (parse-po-file)
+		   (setf *plural-form-function* plural-function)
+		   (setf t-table hashtable))))))))
+    
+    (when update-translation-table
+      (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v)) 
+	       *translation-table*))
+    
+    (if store-results
+	(setf *translation-table* t-table)
+	t-table)))
 
 
 

@@ -1,4 +1,4 @@
-© 2012 cage
+Gettext PO file grammar in BNF notation: © 2012 cage
 This    work    is     licensed    under    the    Creative    Commons
 Attribution-ShareAlike 3.0  Unported License. To  view a copy  of this
 license, visit  http://creativecommons.org/licenses/by-sa/3.0/ or send
@@ -25,7 +25,7 @@ flag_comment := '#,' string newline
 
 msg_str_plural:= 'msgstr[' number ']' escaped_string* newline
 
-comment := '#' newline | '^#[^,].*' newline
+comments := '#' newline | '^#[^,].*' newline
 
 msgstr := 'msgstr'
 

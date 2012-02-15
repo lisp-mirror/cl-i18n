@@ -25,6 +25,12 @@
 	    (format stream "~a" (text condition)))))
 
 
+(define-condition parsing-mofile-error (text-error) 
+  ()
+  (:report (lambda (condition stream) 
+	    (format stream "~a" (text condition)))))
+
+
 
 
 (define-condition no-translation-table-error (text-error) 

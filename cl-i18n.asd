@@ -1,6 +1,5 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10 -*-
 ;;;; vim:set ft=lisp:
-
 ;; This software is Copyright (c) Leslie P. Polzer, 2011.
 ;; Leslie P. Polzer grants you the rights to distribute
 ;; and use this software as governed by the terms
@@ -23,7 +22,8 @@
   :description "A gettext-style internationalisation framework for Common Lisp."
   :depends-on (:alexandria
 	       :cl-ppcre
-	       :osicat)
+	       :osicat
+	       :babel)
   :components ((:file "package")
 	       (:file "utils"
 		      :depends-on ("package"))
@@ -34,14 +34,16 @@
 	       (:file "translation-class"
 		      :depends-on ("plural-forms"))
 	       (:file "pofile"
-		      :depends-on ("package"
+		      :depends-on ("utils"
 				   "translation-class"))
+	       (:file "mofile"
+		      :depends-on ("pofile"))
                (:file "base" 
 		      :depends-on ("utils"
 				   "conditions"
 				   "plural-forms"
 				   "translation-class"
-				   "pofile"))
+				   "mofile"))
                (:file "i18n-utils" 
 		      :depends-on ("base"))))
 

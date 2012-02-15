@@ -10,6 +10,7 @@
 	    (:export
 	     :no-translation-table-error
 	     :parsing-pofile-error
+	     :parsing-mofile-error
 	     :no-translation
 	     :out-of-bounds))
 
@@ -58,6 +59,7 @@
 	     :irish-plural-form 
 	     :romanian-plural-form 
 	     :lithuanian-plural-form
+	     :slurp-file
 	     :translation-list->hash-table
 	     :translation-hash-table->list
 	     :init-translation-table
@@ -67,6 +69,7 @@
 	     :ntranslate
 	     :with-translation
 	     :with-po-file
+	     :with-mo-file
 	     :*translation-file-root* 
 	     :*translation-collect*
 	     :*plural-form-function*
@@ -90,7 +93,6 @@
 			    :alexandria
 			    :cl-ppcre)
 	    (:export
-	     :slurp-file
 	     :generate-i18n-file
 	     :gen-translation-file
 	     :convert-dictionary-format

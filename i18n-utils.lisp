@@ -49,20 +49,11 @@
       (format stream ")~%"))))
 
 
-(defun slurp-file (filename)
-  "A simple way to slurp a file."
-  (labels ((read-a-char (stream)
-	     (read-char stream nil nil)))
-    (with-open-file (stream filename :direction :input)
-      (do ((res "")
-	   (char (read-a-char stream) (read-a-char stream)))
-	  ((not char) (reverse res))
-	(setf res (concatenate 'string (string char) res))))))
 
 (defun get-strings (filename)
   "Uses CL-PPCRE to get all strings on the form #!\"foo\",
   and collect them uniquely in a list."
-  (let* ((sfile (slurp-file filename))
+  (let* ((sfile (cl-i18n:slurp-file filename))
 	 (matched (remove-duplicates (cl-ppcre:all-matches-as-strings "#!\".*?[^\\x5C]\"" sfile) :test #'string=))
 	 (new-strings (mapcar #'(lambda (s) (let ((replaced (cl-ppcre:regex-replace-all "(#!|\\x5C)" s "")))
 					      (subseq replaced 1 (1- (length replaced)))))

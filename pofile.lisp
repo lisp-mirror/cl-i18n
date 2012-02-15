@@ -55,8 +55,10 @@
 (alexandria:define-constant +flag-line+ "#,[ ]*" :test 'equalp)
 (alexandria:define-constant +flag-fuzzy+ "fuzzy" :test 'equalp)
 
-(alexandria:define-constant +msgid+ "msgid[ ]+" :test 'equalp)
-(alexandria:define-constant +msgstr+ "msgstr[ ]+" :test 'equalp)
+(alexandria:define-constant +msgid+ "msgid" :test 'equalp)
+(alexandria:define-constant +msgstr+ "msgstr" :test 'equalp)
+(alexandria:define-constant +msgid-regexp+ "msgid[ ]+" :test 'equalp)
+(alexandria:define-constant +msgstr-regexp+ "msgstr[ ]+" :test 'equalp)
 (alexandria:define-constant +msgstr[]+ "msgstr\\[[0-9]\\]" :test 'equalp)
 (alexandria:define-constant +msgstr[]-regexp+ "msgstr\\[[0-9]\\]" :test 'equalp)
 (alexandria:define-constant +msgid-plural+ "msgid_plural" :test 'equalp)
@@ -310,7 +312,7 @@
 
      
 
-(define-tokenizer next-token +open-paren-regex+ +close-paren-regex+ +number+ +and-op+ +or-op-regex+ +<+ +>+ +<=+ +>=+ +!=+ +==+ +%+ +?-regex+ +colon+ +var+ +end-expression+ +plural-expression-label+ +comment-line+ +msgid+ +msgstr+ +flag-line+ +flag-fuzzy+ +msgstr[]+ +msgid-plural+)
+(define-tokenizer next-token +open-paren-regex+ +close-paren-regex+ +number+ +and-op+ +or-op-regex+ +<+ +>+ +<=+ +>=+ +!=+ +==+ +%+ +?-regex+ +colon+ +var+ +end-expression+ +plural-expression-label+ +comment-line+ +msgid-regexp+ +msgstr-regexp+ +flag-line+ +flag-fuzzy+ +msgstr[]-regexp+ +msgid-plural+)
 
 (defmacro define-is-stuff-p (test &rest operators)
   (alexandria:with-gensyms (str)
@@ -324,7 +326,7 @@
 
 (define-is-stuff-p string= +and-op+ +or-op+ +<+ +>+  +<=+  +>=+  +!=+  +==+  +%+  +?+  +colon+  +open-paren+  +close-paren+ +var+ +end-expression+ +fuzzy-flag+)
 
-(define-is-stuff-p cl-ppcre:scan +comment-line+ +msgid+ +msgstr+ +flag-line+ +msgstr[]+ +msgid-plural+)
+(define-is-stuff-p cl-ppcre:scan +comment-line+ +msgid-regexp+ +msgstr-regexp+ +flag-line+ +msgstr[]-regexp+ +msgid-plural+)
 
 
 (defun is-number-p (str)
@@ -365,8 +367,8 @@
 				     parse-msgid-plural
 				     parse-msgstr-plural)
     #'(lambda (a b) (cl-ppcre:scan b a))
-  (list +msgid+) (list +msgstr+) (list +msgid-plural+)
-  (list +msgstr[]+))
+  (list +msgid-regexp+) (list +msgstr-regexp+) (list +msgid-plural+)
+  (list +msgstr[]-regexp+))
 
 
 (defun is-bool-op-p (str)
@@ -459,7 +461,7 @@
 	 (let-noerr ((plural (parse-msgid-plural-group))
 		     (plural-forms (parse-msgstr-plural-group)))
 	   (values plural plural-forms)))
-	((is-msgstr-p peek)
+	((is-msgstr-regexp-p peek)
 	 (with-no-errors
 	   (parse-msgstr)
 	   (let-noerr ((string (parse-escaped-string)))
@@ -477,7 +479,7 @@
     (parse-msgstr-plural)
     (let-noerr ((string (parse-escaped-string)))
       (if (and (peek-valid-stream)
-	       (is-msgstr[]-p (peek-token)))
+	       (is-msgstr[]-regexp-p (peek-token)))
 	  (progn 
 	    (parse-msgstr-plural-group (push string res)))
 	  (reverse (push string res))))))
@@ -492,6 +494,8 @@
     (with-po-file ((cl-ppcre:regex-replace-all "(?m)\\n" header " "))
       (with-no-errors 
 	(next-token :hook-to-stringpos nil) ;; the plural expression stars here
+	(when-debug
+	  (format t "plural-expr: ****~a***~%" (peek-token)))
 	(multiple-value-bind (fun stack)
 	    (parse-plural-expression)
 	  (when-debug
@@ -679,15 +683,16 @@
 
 
 
-;; some useful test
- ;; (with-po-file ((cl-i18n-utils:slurp-file ""))
- ;;   (format t "~a~%" *pofile*)
- ;;   (multiple-value-bind (hashtable plural-function)
- ;;       (parse-po-file)
- ;;     (setf *plural-form-function* plural-function)
- ;;     (format t "~a~% ~s ~%" (translation-hash-table->list hashtable) plural-function)
- ;;     (format t "function 100->~a~%" (funcall plural-function 100))
- ;;     (format t "~a~%" (ntranslate "approximately %'d hour" "approximately %'d hours" 100))))
+; some useful test
+;; (with-po-file ((slurp-file ""))
+;;   (format t "~a~%" *pofile*)
+;;   (multiple-value-bind (hashtable plural-function)
+;;       (parse-po-file)
+;;     (setf *plural-form-function* plural-function)
+;;     (setf *translation-table* hashtable)
+;;     (format t "~a~% ~s ~%" (translation-hash-table->list hashtable) plural-function)
+;;     (format t "function 100->~a~%" (funcall plural-function 100))
+;;     (format t "~a~%" (ntranslate "approximately %'d hour" "approximately %'d hours" 100))))
 
 ;; (with-po-file ((format nil "0;"))
 ;;   (let ((fun (parse-plural-expression)))

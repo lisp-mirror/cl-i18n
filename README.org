@@ -1,24 +1,26 @@
 * Prerequisites:
 - ASDF
-- cl-ppcre if you want to be able to extract translatable strings
+- cl-ppcre
 - osicat
 - alexandria
-
-
+- babel
 
 * Installation:
 
 The  best  way   to  get  cl-i18n  working  is   using  the  excellent
 [[http://www.quicklisp.org/][quicklisp]]
 
-*please note that currently (2012-01-06) the old version 0.4 is included*
-
 #+BEGIN_SRC common-lisp
 (ql:quickload "cl-i18n")
 #+END_SRC
 
 * Usage
-  Check the examples/ directory for an usage examples.
+  This library can load translations from file formats of the following types:
+- [[https://www.gnu.org/software/gettext/][GNU gettext]] text file (AKA PO files);
+- [[https://www.gnu.org/software/gettext/][GNU gettext]] binary file (AKA MO files);
+- its native file formats (essentially a Common lisp S-exp).
+  
+Check the examples/ directory for an usage example.
 
 * Extracting translatable strings:
 
@@ -26,17 +28,20 @@ The  best  way   to  get  cl-i18n  working  is   using  the  excellent
 (cl-i18n-utils:gen-translation-file ("/src/" "klingon.lisp" :ext "lisp$"))
 #+END_SRC
 
-Will extract  all #!  strings from all  the files in  directory "/src/"
-which name ends  in "lisp" and set up a  basic translation resource in
-klingon.lisp (*Note: the output file if exists will be overwritten*).
+  Will extract  all #!  strings from all  the files in  directory "/src/"
+  which name ends  in "lisp" and set up a  basic translation resource in
+  klingon.lisp (*Note: the output file if exists will be overwritten*).
 
-To make it work with CL-WHO, use the “str” directive, as in
+  To make it work with CL-WHO, use the “str” directive, as in
 #+BEGIN_SRC common-lisp
     (with-html-output *out*
       (:p (str #!"Blood and honour!")))
 #+END_SRC
-
-
+  
+  Please note that the library can accept gettext MO or PO files so
+  nothing prevents you using GNU xgettext to extracts strings that needs to
+  be translated and use its output as translation file.
+  
 * Old version incompatibility
 
 This version deeply changed the  file format of the translation table,
@@ -48,12 +53,18 @@ however you can convert from the old format to the new one with:
 
 *Note: the output file if exists will be overwritten*
 
-* bugs and issues
+* Bugs and issues
 
   Please send all bugs reports to cage@katamail.com
+
+** Known issues
+- Documentation is missing;
+- Source code is mostly undocumented;
+- PO file parser is slow.
 
 * Contributors:
 
 - Leslie P. Polzer <polzer@stardawn.org> (base)
 - Vilson Vieira <vilson@void.cc> (string extractor)
 - Cage <cage@katamail.com> (developer and maintainer) 
+
