@@ -22,26 +22,49 @@ The  best  way   to  get  cl-i18n  working  is   using  the  excellent
   
 Check the examples/ directory for an usage example.
 
-* Extracting translatable strings:
+** Extracting translatable strings:
 
 #+BEGIN_SRC common-lisp
 (cl-i18n-utils:gen-translation-file ("/src/" "klingon.lisp" :ext "lisp$"))
 #+END_SRC
 
-  Will extract  all #!  strings from all  the files in  directory "/src/"
-  which name ends  in "lisp" and set up a  basic translation resource in
-  klingon.lisp (*Note: the output file if exists will be overwritten*).
+   Will extract  all #!  strings from all  the files in  directory "/src/"
+   which name ends  in "lisp" and set up a  basic translation resource in
+   klingon.lisp (*Note: the output file if exists will be overwritten*).
 
-  To make it work with CL-WHO, use the “str” directive, as in
+   To make it work with CL-WHO, use the “str” directive, as in
 #+BEGIN_SRC common-lisp
     (with-html-output *out*
       (:p (str #!"Blood and honour!")))
 #+END_SRC
-  
-  Please note that the library can accept gettext MO or PO files so
-  nothing prevents you using GNU xgettext to extracts strings that needs to
-  be translated and use its output as translation file.
-  
+   
+   Please note that the library can accept gettext MO or PO files so
+   nothing prevents you using GNU xgettext to extracts strings that needs to
+   be translated and use its output as translation file.
+
+** Locating GNU message catalog files
+
+According to
+[[https://www.gnu.org/software/gettext/manual/gettext.html#Locating-Catalogs][GNU
+gettext  manual]] the  path to  the catalog  is system  dipendent, the
+function  /search-mo-repository/ will  try  to figure  out where  that
+catalog  *could*  be;  but  its  implementation  is  slow,  memory
+consuming and sometimes fails (i.e. crash).
+
+** Simple example
+
+Here is  a way similar  to GNU gettext  style API; please note  we are
+assuming  "/usr/share/locale/" as the  path where  the catalog  can be
+found and foo.mo is there...
+
+
+#+BEGIN_SRC common-lisp
+(let ((*translation-file-root* "/usr/share/locale/"))
+   (load-language "foo" :locale "it")
+   (format t "~a~%"  #!"Browse")
+   (format t "~a~%" #!"Save as..."))
+#+END_SRC
+
 * Old version incompatibility
 
 This version deeply changed the  file format of the translation table,
@@ -62,6 +85,22 @@ however you can convert from the old format to the new one with:
 - Source code is mostly undocumented;
 - PO file parser is slow.
 
+* License
+  This library is released under Lisp Lesser General Public license (see
+  COPYING.LESSER file)
+
+  Examples are released under GPL version 3 or later
+
+  doc/internals/pofiles_grammar  is ©  2012 cage  and is  licensed under
+  Creative Commons Attribution-ShareAlike 3.0 Unported
+
+* NO WARRANTY
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  
 * Contributors:
 
 - Leslie P. Polzer <polzer@stardawn.org> (base)

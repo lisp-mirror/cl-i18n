@@ -12,12 +12,13 @@
 (defparameter *has-errors* nil)
 (defparameter *parsing-errors* '())
 
-(defmacro with-po-file ((pofile) &rest body)
-  `(let ((*pofile* ,pofile)
+(defmacro with-po-file ((&key (buffer (make-buffer 2)) (filename nil)) &rest body)
+  `(let ((*pofile* (make-instance 'buffered-input-file :buffer ,buffer :filename ,filename))
 	 (*parsing-errors* '())
-	 (*has-errors* nil)
-	 (*string-pos* 0))
-     ,@body))
+	 (*has-errors* nil))
+     (unwind-protect
+	  (progn ,@body)
+       (close-file *pofile*))))
 
 (alexandria:define-constant +number+ "0|[1-9][0-9]+|[1-9]" :test 'string=)
 
@@ -173,47 +174,53 @@
      "\"")))
 
 
-
-
 (defun char@ ()
-  (restart-case 
-      (if (< *string-pos* (length *pofile*))
-	  (string (elt *pofile* *string-pos*))
-	  (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*))
+  (restart-case
+      (let ((char (get-char *pofile*)))
+	(if (not (null char))
+	    (string char)
+	    (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*)))
     (ignore-error () ())
     (use-value (e) e)))
 
 (defun char@1+ ()
-  (restart-case 
-      (if (< *string-pos* (length *pofile*))
-	  (prog1
-	      (string (elt *pofile* *string-pos*))
-	    (incf *string-pos*))
-	  (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*))
+  (restart-case
+      (let ((char (get-char *pofile*)))
+	(if (not (null char))
+	    (progn
+	      (increment-pointer *pofile*)
+	      (string char))
+	    (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*)))
     (ignore-error () ())
     (use-value (e) e)))
 
+
+
 (defun 1+char@ (&key (go-back t))
-  (restart-case 
-      (if (and
-	   (< *string-pos* (length *pofile*))
-	   (< (1+ *string-pos*) (length *pofile*)))
-	  (progn 
-	    (incf *string-pos*)
-	    (let ((char (string (elt *pofile* *string-pos*))))
-	      (when go-back
-		(incf *string-pos* -1))
-	      char))
-	  (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*))
+  (restart-case
+      (progn
+	(increment-pointer *pofile*)
+	(let ((char (get-char *pofile*)))
+	  (if (not (null char))
+	      (progn
+		(when go-back
+		  (decrement-pointer *pofile*))
+		(string char))
+	      (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*))))
     (ignore-error () ())
     (use-value (e) e)))
 
 
 
 (defun peek-end-stream (&key (pos-offset 0))
-  (if (< (+ *string-pos* pos-offset) (length *pofile*))
-      nil
-      t))
+  (let ((saved-pos (logical-file-position *pofile*)))
+    (loop for i from 0 below (1- pos-offset) do (increment-pointer *pofile*))
+    (prog1
+	(not (increment-pointer *pofile*))
+      (seek *pofile* saved-pos))))
+
+
+
 
 (defun peek-valid-stream ()
   (not (peek-end-stream)))
@@ -225,17 +232,6 @@
 	 (setf *has-errors* t)
 	 (push ,msg *parsing-errors*))))
 
-(defmacro with-peek-error ((predicate *pofile*) &body body)
-  `(if (,predicate *pofile*)
-       (progn ,@body
-	      t)
-       nil))
-
-(defmacro with-peek-error-if-else ((predicate &rest then) &body body)
-  `(if (,predicate *pofile*)
-       (progn ,@then)
-       (progn ,@body)))
-
 
 
 (defmacro with-no-errors (&body body)
@@ -243,18 +239,24 @@
      ,@body))
 
 
-(defun peek-token (&optional (test #'identity))
-  (if (< *string-pos* (length *pofile*))
-      (multiple-value-bind (token start-token)
-	  (next-token)
-	(prog1
-	    (funcall test token)
-	  (setf *string-pos* start-token)))))
-
 (defmacro with-valid-stream (&body body)
   `(with-error (#'peek-valid-stream "Attempt to read an empty stream")
      ,@body))
 
+
+(defun peek-token (&optional (test #'identity))
+  (with-valid-stream
+    (multiple-value-bind (token start-token)
+	(next-token)
+      (prog1
+	  (funcall test token)
+	(seek *pofile* start-token)))))
+
+
+(defmacro multiple-increment (times)
+  `(progn
+     ,@(loop for i from 0 below times collect
+	    `(increment-pointer *pofile*))))
 
 (defmacro define-tokenizer (name &rest regexps)
   (alexandria:with-gensyms (scan tokens max-match)
@@ -264,32 +266,29 @@
 	     (let ((,tokens nil))
 	       (cond
 		 ((string= (char@) +escape-newline+)
-		  (incf *string-pos* 2)
+		  (multiple-increment 2)
 		  (,funname))
 		 ((member (char@) +blank-space+ :test #'string=)
-		  (incf *string-pos*)
+		  (increment-pointer *pofile*)
 		  (,funname))
 		 (t
 		  ,@(mapcar #'(lambda (regex) 
 				`(let ((,scan (multiple-value-list 
-					       (cl-ppcre:scan ,regex *pofile* :start *string-pos*))))
-				   (when (and 
-					  (first ,scan)
-					  (if hook-to-stringpos
-					      (= (first ,scan) *string-pos*)
-					      t))
+					       (regex-scan *pofile* ,regex 
+							   hook-to-stringpos))))
+				   (when (first ,scan)
 				     (push (list
-					    (subseq *pofile* (first ,scan) ; the token
-						    (second ,scan))
-					    *string-pos* ; where the token starts
-					    (second ,scan)) ;where the token ends
+					    (first ,scan)  ; the token
+					    (second ,scan) ; where the token starts
+					    (third ,scan)) ; where the token ends
 					   ,tokens))))
 			    regexps)
 		  (if (not (null ,tokens))
 		      (let ((,max-match (first (sort ,tokens 
 						     #'(lambda (a b)
 							 (> (length (first a)) (length (first b))))))))
-			(setf *string-pos* (third ,max-match))
+
+			(seek *pofile* (third ,max-match))
 			(values (first ,max-match) (second ,max-match)))
 		      (if (peek-end-stream :pos-offset +peek-length-tokenizer-on-error+)
 			  (progn
@@ -302,8 +301,8 @@
 			    (setf *has-errors* t)
 			    (push (format nil 
 					  "Error: stream ended without valid token found starting from ~s"
-					  (subseq *pofile* *string-pos* (+ *string-pos*
-									   +peek-length-tokenizer-on-error+)))
+					  (regex-scan *pofile* ,(format nil ".{~a}"
+									+peek-length-tokenizer-on-error+) :sticky nil))
 				  *parsing-errors*)
 			    nil))))))
 	     
@@ -394,7 +393,8 @@
 
 (defmacro defnocfun (name args &body body)
   `(defun ,(alexandria:format-symbol t "~:@(~a~)" name) (,@args)
-     (parse-comment-line)
+     (when (peek-valid-stream)
+       (parse-comment-line))
      ,@body))
 
 
@@ -419,8 +419,6 @@
   (let-noerr ((plural-function (parse-header))
 	      (entries (parse-entries)))
     (values entries plural-function *has-errors* *parsing-errors*)))
-
-
 
 
 (defnocfun parse-entries (&optional (res (make-hash-table :test 'equal)))
@@ -491,19 +489,33 @@
   (let-noerr ((header (parse-escaped-string)))
     (when-debug
       (format t "header~%~s~%" header))
-    (with-po-file ((cl-ppcre:regex-replace-all "(?m)\\n" header " "))
+    (with-po-file (:buffer (cl-ppcre:regex-replace-all "(?m)\\n" header " "))
       (with-no-errors 
-	(next-token :hook-to-stringpos nil) ;; the plural expression stars here
-	(when-debug
-	  (format t "plural-expr: ****~a***~%" (peek-token)))
+	(next-token :hook-to-stringpos nil);; the plural expression stars here
+	 (when-debug
+	   (format t "plural-expr: ****~a***~%" (peek-token)))
 	(multiple-value-bind (fun stack)
 	    (parse-plural-expression)
-	  (when-debug
-	    (format t "stack (~%~{~s~%~})~% 1 -> ~a~%" stack (funcall fun 1)))
+	   (when-debug
+	     (format t "stack (~%~{~s~%~})~% fun ~a 1 -> ~a~%" stack fun (funcall fun 1)))
 	  fun)))))
 
 
 
+(defun extract-plural-function (header)
+  (when-debug
+    (format t "header~%~s~%" header))
+
+  (with-po-file (:buffer (cl-ppcre:regex-replace-all "(?m)\\n" header " "))
+    (with-no-errors 
+      (next-token :hook-to-stringpos nil);; the plural expression stars here
+      (when-debug
+	(format t "plural-expr: ****~a***~%" (peek-token)))
+      (multiple-value-bind (fun stack)
+	  (parse-plural-expression)
+	(when-debug
+	  (format t "stack (~%~{~s~%~})~% fun ~a 1 -> ~a~%" stack fun (funcall fun 1)))
+	fun))))
 
   
 (defun parse-escaped-string (&optional (res "") (delimc nil))
@@ -512,7 +524,6 @@
 		      #'(lambda(e)
 			  (declare (ignore e))
 			  (invoke-restart 'use-value ""))))
-	
 	(let-noerr ((char (char@1+)))
 	  (cond
 	    ((string= char +escape-string-escape-char+)
@@ -681,77 +692,3 @@
 	(execute)))))
 
 
-
-
-; some useful test
-;; (with-po-file ((slurp-file ""))
-;;   (format t "~a~%" *pofile*)
-;;   (multiple-value-bind (hashtable plural-function)
-;;       (parse-po-file)
-;;     (setf *plural-form-function* plural-function)
-;;     (setf *translation-table* hashtable)
-;;     (format t "~a~% ~s ~%" (translation-hash-table->list hashtable) plural-function)
-;;     (format t "function 100->~a~%" (funcall plural-function 100))
-;;     (format t "~a~%" (ntranslate "approximately %'d hour" "approximately %'d hours" 100))))
-
-;; (with-po-file ((format nil "0;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 10))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-;; (with-po-file ((format nil "(n != 1); "))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 2))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-;; (with-po-file ((format nil "n > 1;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 1))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-;; (with-po-file ((format nil "n==1 ? 0 : n==2 ? 1 : 2;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 1))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-;; (with-po-file ((format nil "n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 1))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-;; (with-po-file ((format nil "n%10==1 && n%100!=11 ? 0 : \\~%n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 1))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-;; (with-po-file ((format nil "n%10==1 && n%100!=11 ? 0 : \\~%n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 1))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-
-;; (with-po-file ((format nil "(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 5))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-
-;; (with-po-file ((format nil "n==1 ? 0 : \\~%n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 2))
-;;     (format t "errors: ~s~%" *parsing-errors*)))
-
-
-
-;; (with-po-file ((format nil "n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3;"))
-;;   (let ((fun (parse-plural-expression)))
-;;     (format t "res: ~s~%" (funcall fun 105))
-;;     (format t "errors: ~s~%" *parsing-errors*)))

@@ -1,4 +1,5 @@
 ;; released under LLGPL
+"italian-plural-form"
 (
 id "apple"
  translation "mela"
@@ -10,4 +11,10 @@ id "pie"
  plurals-form "torte"
  status :TRANSLATED
  plurals ("torte")
+id "Invalid argument"
+ translation "Argomento non valido"
+ plurals-form "Argomento non valido"
+ status :TRANSLATED
+ plurals nil
+
 )

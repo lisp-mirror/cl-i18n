@@ -1,5 +1,3 @@
-;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10 -*-
-;;;; vim:set ft=lisp:
 ;; This software is Copyright (c) Leslie P. Polzer, 2011.
 ;; Leslie P. Polzer grants you the rights to distribute
 ;; and use this software as governed by the terms
@@ -29,19 +27,21 @@
 		      :depends-on ("package"))
 	       (:file "conditions"
 		      :depends-on ("package"))
+	       (:file "buffered-input-file"
+		      :depends-on ("utils"
+				   "conditions"
+				   "package"))
 	       (:file "plural-forms"
 		      :depends-on ("package"))
 	       (:file "translation-class"
 		      :depends-on ("plural-forms"))
 	       (:file "pofile"
-		      :depends-on ("utils"
+		      :depends-on ("buffered-input-file"
 				   "translation-class"))
 	       (:file "mofile"
 		      :depends-on ("pofile"))
                (:file "base" 
-		      :depends-on ("utils"
-				   "conditions"
-				   "plural-forms"
+		      :depends-on ("plural-forms"
 				   "translation-class"
 				   "mofile"))
                (:file "i18n-utils" 

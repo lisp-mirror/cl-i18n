@@ -32,7 +32,7 @@
     :accessor plural-form
     :type 'string)
    (plural-translated
-    :initform ""
+    :initform '()
     :initarg  :plural-translated
     :accessor plural-translated
     :type 'list
@@ -45,7 +45,7 @@
   (:documentation "The class that holds a translated string, its plural form and the translation status"))
 
 (defmethod print-object ((object translation) stream)
-  (format nil "~a ~s~%~a ~s~%~a ~s~%~a ~s~%"
+  (format stream "~a ~s~%~a ~s~%~a ~s~%~a ~s~%"
 	  +translation+ (translated object) 
 	  +plurals-form+ (plural-form object)
 	  +status+       (flag object)

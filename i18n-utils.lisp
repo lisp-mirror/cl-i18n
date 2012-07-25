@@ -102,11 +102,12 @@
 		       (osicat:list-directory path))))
 
 
-(defun convert-dictionary-format (old)
+(defun convert-dictionary-format (old &key (plural-function 'cl-i18n:n/=1-plural-form))
   "Convert an 0.4 translation table file format to the new one"
   (with-open-file (istream old :direction :input :if-does-not-exist :error)
     (let ((old-format (read istream)))
-      (format nil "(~%~a)~%"
+      (format nil "~s~%(~%~a)~%"
+	      (symbol-name plural-function)
 	      (with-output-to-string (ostream)
 		(loop 
 		   for ct = 0 then (+ ct 3) while (< ct (length old-format)) do

@@ -13,6 +13,10 @@
   "The directory where translation files are stored.
   Defaults to current directory.")
 
+(defparameter *locale* nil)
+
+(defparameter *categories* "LC_MESSAGES")
+
 (defparameter *plural-form-function* #'n/=1-plural-form
   "This is the function used by the library to figure out the right plural form")
 
@@ -36,57 +40,85 @@
     (format file "~a" (translation-hash-table->list *translation-table*))))
 
 
-(defun init-translation-table (filename &key (store-results t) (update-translation-table t))
-  "Load translations from a file, storing them in a hash table.
-   if store-results is t *translation-table* is setf'd to the loaded table
-   If the file is in gettext po file format the *plural-form-function* is setf'd too"
-  (let ((t-table (make-hash-table :test 'equal)))
+(defmacro if-not-utf8-read-whole ((filename) &body body)
+  `(if (utf8-encoded-p ,filename)
+       (with-po-file (:filename ,filename)
+	 ,@body)
+       (with-po-file (:filename nil :buffer (slurp-file ,filename 
+							:convert-to-string nil))
+	 ,@body)))
+
+(defun init-translation-table (filename &key 
+			       (store-hashtable t) 
+			       (store-plural-function t) 
+			       (update-translation-table t))
+  "Load translations from a file (*translation-file-root* is used as a
+   prefix  for the actual  path), storing  them in  a hash  table.  if
+   store-hashtable is  t *translation-table*  is setf'd to  the loaded
+   table,  if  store-plural-function  is t  *plural-form-function*  is
+   setf'd too. The *plural-form-function* is setf'd too"
+  (let ((t-table (make-hash-table :test 'equal))
+	(local-plural-function nil)
+	(actual-filename (if *locale*
+			     (format nil "~a~a~a~a~a~a~a.mo" 
+				     *translation-file-root*
+				     *directory-sep*
+				     *locale*
+				     *directory-sep*
+				     *categories*
+				     *directory-sep*
+				     filename)
+			     (format nil "~a~a~a" 
+				     *translation-file-root*  
+				     *directory-sep*
+				     filename))))
     (cond
-      ((scan +pofile-ext+ filename)
-       (with-po-file ((slurp-file filename))
+      ((scan +pofile-ext+ actual-filename)
+       (if-not-utf8-read-whole (actual-filename)
 	 (multiple-value-bind (hashtable plural-function errorsp errors)
 	     (parse-po-file)
 	   (if errorsp
-	       (error 'conditions:parsing-pofile-error :text (format nil "~{~a~}" errors))
+	       (error 'conditions:parsing-pofile-error 
+		      :text (format nil "~{~a~}" errors))
 	       (progn
-		 (setf *plural-form-function* plural-function)
+		 (setf local-plural-function plural-function)
 		 (setf t-table hashtable))))))
-      ((scan +lisp-table-ext+ filename)
-       (with-open-file (file filename)
+      ((scan +lisp-table-ext+ actual-filename)
+       (with-open-file (file actual-filename)
+	 (setf local-plural-function (symbol-function (alexandria:format-symbol 'cl-i18n "~@:(~a~)"
+										(read file))))
 	 (setf t-table (translation-list->hash-table (read file) 
 						     (make-hash-table :test 'equal)))))
       (t ;;maybe a MO file?
-       (with-mo-file (stream mofile filename)
+       (with-mo-file (stream mofile actual-filename)
 	 (parse-mofile mofile stream)
 	 (if (not (null (parsing-errors mofile)))
-	     (error 'conditions:parsing-mofile-error :text (format nil "~{~a~}" (parsing-errors mofile)))
-	     (progn
-	       (mofile->pofile mofile)
-	       (with-po-file ((pofile mofile))
-		 (multiple-value-bind (hashtable plural-function)
-		     (parse-po-file)
-		   (setf *plural-form-function* plural-function)
-		   (setf t-table hashtable))))))))
+	     (error 'conditions:parsing-mofile-error 
+		    :text (format nil "~{~a~}" (parsing-errors mofile)))
+	     (multiple-value-bind (hashtable plural-function)
+		 (mofile->translation mofile)
+	       (setf t-table hashtable)
+	       (setf local-plural-function plural-function))))))
     
     (when update-translation-table
       (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v)) 
 	       *translation-table*))
     
-    (if store-results
-	(setf *translation-table* t-table)
-	t-table)))
+    (when store-hashtable
+      (setf *translation-table* t-table))
+    (when store-plural-function
+      (setf *plural-form-function* local-plural-function))
+    (values t-table local-plural-function)))
 
 
 
-(defun load-language (lang &key (file-format "lisp"))
+(defun load-language (catalog &key (locale *locale*) (categories *categories*) (store-plural-function t))
   "Load a language that will be used for all subsequent translations."
-  (init-translation-table (concatenate 'string *translation-file-root* "/"
-                                       (etypecase lang
-                                         (string lang)
-                                         (symbol (string-downcase (symbol-name lang))))
-                                       "." file-format)
-			  :store-results t
-			  :update-translation-table t))
+  (let ((*locale* locale)
+	(*categories* categories))
+    (init-translation-table catalog :store-hashtable t 
+			    :store-plural-function store-plural-function
+			    :update-translation-table t)))
 
 
 (defun translate (str)
@@ -96,7 +128,7 @@
   (restart-case
     (when (and (eql (hash-table-count *translation-table*) 0) (not *translation-collect*))
       (error 'conditions:no-translation-table-error :text "cl-i18n: translation table not initialized! Call \"load-language\" first."))
-    (load-language (value) (load-language value))
+    (load-language (value &optional (store-plural t)) (load-language value :store-plural-function store-plural))
     (use-value (value) (setf *translation-table* value)))
   (multiple-value-bind (translation found) (gethash str *translation-table*)
     (if (or (not found) (string= (translated translation) ""))
@@ -153,8 +185,6 @@
            (return)))
         (write-char char output)))))
 
-;(when (get-dispatch-macro-character #\# #\@)
-;    (error "Someone is already using #@"))
 
 (defmacro with-translation ((translations plural-function) &body body)
   "Macro to switch between language at runtime"
@@ -173,5 +203,3 @@
   #'(lambda (stream char1 num)
       (declare (ignore char1))
       `(cl-i18n:ntranslate ,(read stream) ,(read stream) ,num)))
-      
-

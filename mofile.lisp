@@ -99,6 +99,8 @@
 (defgeneric parse-translated-strings (object stream))
 (defgeneric parse-mofile (object stream))
 (defgeneric mofile->pofile (object))
+(defgeneric mofile->translation (object &optional originals translated 
+					plural-function translations))
 
 
 (defmethod print-object :after ((object mofile) stream)
@@ -206,19 +208,22 @@
   (parse-original-strings object stream)
   (parse-translated-strings object stream))
   
+
+(defun split-escape (msg)
+  (if (null msg)
+      (format nil "\"\"~%")
+      (let ((splitted (cl-ppcre:split "\\n" msg)))
+	(if (> (length splitted) 1)
+	    (format nil "~{\"~a\\n\"~%~}" splitted)
+	    (format nil "~{\"~a\"~%~}" splitted)))))
+
+
 (defmethod mofile->pofile ((object mofile))
   (with-accessors ((pofile pofile)
 		   (original-strings original-strings)
 		   (translated-strings translated-strings)) object
     
-    (labels ((split-escape (msg)
-	       (if (null msg)
-		   (format nil "\"\"~%")
-		   (let ((splitted (cl-ppcre:split "\\n" msg)))
-		     (if (> (length splitted) 1)
-			 (format nil "~{\"~a\\n\"~%~}" splitted)
-			 (format nil "~{\"~a\"~%~}" splitted)))))
-	     (concat (str)
+    (labels ((concat (str)
 	       (setf pofile
 		     (concatenate 'string pofile str))))
       (let ((ct 0))
@@ -239,4 +244,39 @@
 		    (incf ct))
 		original-strings)
 	(values pofile object)))))
+
+;; (defclass translation ()
+;;   ((translated
+;;     :documentation "The translated string")
+;;    (plural-form
+;;    (plural-translated
+;;     :documentation "a list of string for each valid plural form")
+;;    (flag
+
+      
+
+(defmethod mofile->translation ((object mofile) &optional
+				(original (original-strings object))
+				(translated (translated-strings object))
+				(plural-function (extract-plural-function (first (first translated))))
+				(translations (make-hash-table :test 'equal)))
+  (if (null original)
+      (values translations plural-function)
+      (let ((translation (make-instance 'translation))
+	    (orig (first original))
+	    (transl (first translated)))
+	
+	(setf (translated translation) (first transl))
+	(if (> (length orig) 1)
+	    (setf (plural-form translation) (split-escape (second orig))))
+	
+	(do ((plural-form (rest transl) (rest plural-form)))
+	    ((null plural-form) (setf (plural-translated translation)
+				      (reverse (plural-translated translation))))
+	  (push (first plural-form) (plural-translated translation)))
+	(setf (gethash (first orig) translations) translation)
+	(mofile->translation object (rest original) (rest translated) plural-function translations))))
+
+
+  
       
