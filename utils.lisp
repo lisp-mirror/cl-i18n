@@ -24,7 +24,7 @@
 (defparameter *well-known-mofile-path* '("/usr/share/locale/" "/usr/local/share/locale/"))
 
 
-
+(alexandria:define-constant +utx-ext+ "utx$" :test 'string=)
 (alexandria:define-constant +pofile-ext+ "po$" :test 'string=)
 (alexandria:define-constant +lisp-table-ext+ "lisp$" :test 'string=)
 

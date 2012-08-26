@@ -245,16 +245,6 @@
 		original-strings)
 	(values pofile object)))))
 
-;; (defclass translation ()
-;;   ((translated
-;;     :documentation "The translated string")
-;;    (plural-form
-;;    (plural-translated
-;;     :documentation "a list of string for each valid plural form")
-;;    (flag
-
-      
-
 (defmethod mofile->translation ((object mofile) &optional
 				(original (original-strings object))
 				(translated (translated-strings object))

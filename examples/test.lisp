@@ -62,32 +62,52 @@
 
 (setf *translation-file-root* "cl-i18n/examples/locale/")
 
-(defparameter *italian-from-lisp* (multiple-value-list (init-translation-table "italian.lisp" 
-									      :store-hashtable nil 
-									      :store-plural-function t 
-									      :update-translation-table nil)))
+(defparameter *italian-from-lisp* (multiple-value-list (load-language "italian.lisp"
+								      :locale nil
+								      :store-hashtable nil 
+								      :store-plural-function nil
+								      :update-translation-table nil)))
 
-(defparameter *italian-from-po* (multiple-value-list (init-translation-table "it.po" 
-									      :store-hashtable nil 
-									      :store-plural-function t 
-									      :update-translation-table nil)))
 
-;;; runtime dictionary switching
+
+(defparameter *italian-from-po* (multiple-value-list (load-language "it.po" 
+								    :locale nil 
+								    :store-hashtable nil 
+								    :store-plural-function nil
+								    :update-translation-table nil)))
+
+
+
+
+(defparameter *it-from-utx* (multiple-value-list (load-language "it.utx" 
+								:locale nil 
+								:store-hashtable nil 
+								:store-plural-function nil
+								:update-translation-table nil)))
+
+
+
+;; runtime dictionary switching
 (cl-i18n:with-translation ((first *italian-from-lisp*)
 			   (second *italian-from-lisp*))
 
-    (format t "translation from lisp~%~a ~a~%" 1 #!"apple")
+  (format t "translation from lisp~%~a ~a~%" 1 #!"apple")
+  (format t "~a ~a~%" 1 #!"pie")
+  (format t "~a ~a~%" 4 (cl-i18n:ntranslate "pie" "pies" 4))
+  (format t "~a ~a~%" 4 (cl-i18n:ntranslate "apple" "apples" 4))
+  (format t "~a~%~%" #!"Invalid argument")
+
+  (cl-i18n:with-translation ((first *italian-from-po*)
+			     (second *italian-from-po*))
+    
+    (format t "switching to po file ~%~a ~a~%" 1 #!"apple")
     (format t "~a ~a~%" 1 #!"pie")
     (format t "~a ~a~%" 4 (cl-i18n:ntranslate "pie" "pies" 4))
     (format t "~a ~a~%" 4 (cl-i18n:ntranslate "apple" "apples" 4))
-    (format t "~a~%~%" #!"Invalid argument")
-    
-    (cl-i18n:with-translation ((first *italian-from-po*)
-			       (second *italian-from-lisp*))
+    (format t "~a~%~%" #!"Invalid argument")))
       
-      (format t "switching to po file ~%~a ~a~%" 1 #!"apple")
-      (format t "~a ~a~%" 1 #!"pie")
-      (format t "~a ~a~%" 4 (cl-i18n:ntranslate "pie" "pies" 4))
-      (format t "~a ~a~%" 4 (cl-i18n:ntranslate "apple" "apples" 4))
-      (format t "~a~%~%" #!"Invalid argument")))
 
+(format t "UTX example~%")
+(cl-i18n:with-translation ((first *it-from-utx*)
+ 			   (second *it-from-utx*))
+  (format t "~a ~a~%" 4 (cl-i18n:ntranslate "apple" "apples" 4)))

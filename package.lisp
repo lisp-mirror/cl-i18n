@@ -11,14 +11,34 @@
 	     :no-translation-table-error
 	     :parsing-pofile-error
 	     :parsing-mofile-error
+	     :parsing-utxfile-error
 	     :no-translation
 	     :out-of-bounds))
+
 
 (defpackage :cl-i18n (:use 
 		      :cl
 		      :alexandria
 		      :cl-ppcre)
 	    (:export
+	     :define-tokenizer
+	     :define-parser-skeleton
+	     :parsed-file
+	     :defnocfun
+	     :with-error
+	     :with-no-errors
+	     :peek-valid-stream
+	     :is-comment-line-p
+	     :next-token
+	     :comment-line
+	     :*file*
+	     :*has-errors*
+	     :*parsing-errors*
+	     :peek-token
+	     :parse-comment-line
+	     :seek
+	     :get-line
+
 	     :translation
 	     :translated
 	     :flag
@@ -86,6 +106,22 @@
 	     :+plurals+)
 	    (:documentation "An internationalisation framework for Common Lisp"))
 
+
+
+(defpackage :utx-file (:use 
+		       :cl
+		       :alexandria
+		       :cl-ppcre)
+	    (:import-from :cl-i18n :peek-token)
+	    (:import-from :cl-i18n :parse-comment-line)
+	    (:import-from :cl-i18n :comment-line)
+	    (:export
+	     :utx-parsed-file
+	     :is-comment-line-p
+	     :comment-line
+	     :next-token
+	     :parse-utx-file
+	     :with-utx-file))
 
 
 (defpackage :cl-i18n-utils (:use 

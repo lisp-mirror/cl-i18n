@@ -45,7 +45,7 @@
        (with-po-file (:filename ,filename)
 	 ,@body)
        (with-po-file (:filename nil :buffer (slurp-file ,filename 
-							:convert-to-string nil))
+							:convert-to-string t))
 	 ,@body)))
 
 (defun init-translation-table (filename &key 
@@ -83,6 +83,17 @@
 	       (progn
 		 (setf local-plural-function plural-function)
 		 (setf t-table hashtable))))))
+      ((scan +utx-ext+ actual-filename)
+       (utx-file:with-utx-file (:filename actual-filename)
+	 (multiple-value-bind (hashtable plural-function errorsp errors)
+	     (utx-file:parse-utx-file)
+	   (if errorsp
+	       (error 'conditions:parsing-utxfile-error 
+		      :text (format nil "~{~a~}" errors))
+	       (progn
+		 (setf local-plural-function plural-function)
+		 (setf t-table hashtable))))))
+
       ((scan +lisp-table-ext+ actual-filename)
        (with-open-file (file actual-filename)
 	 (setf local-plural-function (symbol-function (alexandria:format-symbol 'cl-i18n "~@:(~a~)"
@@ -112,13 +123,16 @@
 
 
 
-(defun load-language (catalog &key (locale *locale*) (categories *categories*) (store-plural-function t))
+(defun load-language (catalog &key (locale *locale*) (categories *categories*)
+		      (store-plural-function t) (store-hashtable t)
+		      (update-translation-table t))
   "Load a language that will be used for all subsequent translations."
   (let ((*locale* locale)
 	(*categories* categories))
-    (init-translation-table catalog :store-hashtable t 
+    (init-translation-table catalog 
+			    :store-hashtable store-hashtable
 			    :store-plural-function store-plural-function
-			    :update-translation-table t)))
+			    :update-translation-table update-translation-table)))
 
 
 (defun translate (str)

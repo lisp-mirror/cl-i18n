@@ -1,0 +1,10 @@
+#UTX 0.1; en/it; 2012-08-25 20:19:13+02:00; cage; CC-by-SA;
+# This    work    is     licensed    under    the    Creative    Commons
+# Attribution-ShareAlike 3.0  Unported License. To  view a copy  of this
+# license, visit  http://creativecommons.org/licenses/by-sa/3.0/ or send
+# a letter to  Creative Commons, 444 Castro Street,  Suite 900, Mountain
+#View, California, 94041, USA.
+#src	tgt	src:pos	term status	src:plural
+apple	mela	-	-	mele
+pie	torta	-
+fish	pesce	-	forbidden

@@ -30,6 +30,11 @@
   (:report (lambda (condition stream) 
 	    (format stream "~a" (text condition)))))
 
+(define-condition parsing-utxfile-error (text-error) 
+  ()
+  (:report (lambda (condition stream) 
+	    (format stream "~a" (text condition)))))
+
 
 
 

@@ -7,18 +7,17 @@
 
 (in-package :cl-i18n)
 
-(defparameter *pofile* "")
-(defparameter *string-pos* 0)
-(defparameter *has-errors* nil)
-(defparameter *parsing-errors* '())
+(alexandria:define-constant +po-comment-line+ "#\\n|^#[^,].*\\n|\\n" :test 'string=)
 
-(defmacro with-po-file ((&key (buffer (make-buffer 2)) (filename nil)) &rest body)
-  `(let ((*pofile* (make-instance 'buffered-input-file :buffer ,buffer :filename ,filename))
-	 (*parsing-errors* '())
-	 (*has-errors* nil))
-     (unwind-protect
-	  (progn ,@body)
-       (close-file *pofile*))))
+(defclass po-parsed-file (parsed-file) ())
+
+
+(defmethod initialize-instance :after ((object po-parsed-file) &key &allow-other-keys)
+  (with-slots (comment-line) object
+    (setf comment-line +po-comment-line+)))
+
+
+(define-parser-skeleton po po-parsed-file)
 
 (alexandria:define-constant +number+ "0|[1-9][0-9]+|[1-9]" :test 'string=)
 
@@ -41,13 +40,8 @@
 (alexandria:define-constant +open-paren-regex+  "\\(" :test 'string=)
 (alexandria:define-constant +close-paren-regex+  "\\)" :test 'string=)
 (alexandria:define-constant +var+  "n" :test 'string=)
-(alexandria:define-constant +blank-space+ '(#\Space #\newline) :test 'equalp)
+
 (alexandria:define-constant +escape-newline+ "\\" :test 'equalp)
-
-
-(alexandria:define-constant +peek-length-tokenizer-on-error+ 6 :test 'equal)
-
-(alexandria:define-constant +comment-line+ "#\\n|^#[^,].*\\n|\\n" :test 'string=)
 (alexandria:define-constant +escaped-string-delim+ "\"" :test 'string=)
 (alexandria:define-constant +escape-string-escape-char+ "\\" :test 'equalp)
 (alexandria:define-constant +escape-string-escaped-newline+ "n" :test 'equalp)
@@ -149,20 +143,6 @@
     (t
      (symbol-function (intern fun)))))
 
-(defmacro let-noerr (forms &body body)
-  (if (not (null forms))
-      `(with-no-errors
-	 (let (,(first forms))
-	   (let-noerr ,(rest forms) ,@body)))
-      `(progn ,@body)))
-
-(defmacro let-noerr* (forms &body body)
-  (if (not (null forms))
-      `(with-no-errors
-	 (let* (,(first forms))
-	   (let-noerr ,(rest forms) ,@body)))
-      `(progn ,@body)))
-
 
 (defun unescaped-char (char)
   (cond
@@ -174,144 +154,16 @@
      "\"")))
 
 
-(defun char@ ()
-  (restart-case
-      (let ((char (get-char *pofile*)))
-	(if (not (null char))
-	    (string char)
-	    (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*)))
-    (ignore-error () ())
-    (use-value (e) e)))
+(define-tokenizer (po-parsed-file +po-comment-line+ +open-paren-regex+ +close-paren-regex+ +number+ +and-op+ +or-op-regex+ +<+ +>+ +<=+ +>=+ +!=+ +==+ +%+ +?-regex+ +colon+ +var+ +end-expression+ +plural-expression-label+ +msgid-regexp+ +msgstr-regexp+ +flag-line+ +flag-fuzzy+ +msgstr[]-regexp+ +msgid-plural+)
+    ((string= (char@) +escape-newline+)
+     (multiple-increment 2)
+     (next-token *file*))
+  ((member (char@) *blank-space* :test #'string=)
+   (increment-pointer *file*)
+   (next-token *file*)))
+  
+  
 
-(defun char@1+ ()
-  (restart-case
-      (let ((char (get-char *pofile*)))
-	(if (not (null char))
-	    (progn
-	      (increment-pointer *pofile*)
-	      (string char))
-	    (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*)))
-    (ignore-error () ())
-    (use-value (e) e)))
-
-
-
-(defun 1+char@ (&key (go-back t))
-  (restart-case
-      (progn
-	(increment-pointer *pofile*)
-	(let ((char (get-char *pofile*)))
-	  (if (not (null char))
-	      (progn
-		(when go-back
-		  (decrement-pointer *pofile*))
-		(string char))
-	      (error 'conditions:out-of-bounds :seq *pofile* :idx *string-pos*))))
-    (ignore-error () ())
-    (use-value (e) e)))
-
-
-
-(defun peek-end-stream (&key (pos-offset 0))
-  (let ((saved-pos (logical-file-position *pofile*)))
-    (loop for i from 0 below (1- pos-offset) do (increment-pointer *pofile*))
-    (prog1
-	(not (increment-pointer *pofile*))
-      (seek *pofile* saved-pos))))
-
-
-
-
-(defun peek-valid-stream ()
-  (not (peek-end-stream)))
-
-(defmacro with-error ((predicate msg &rest arg-predicate) &body body)
-  `(if (apply ,predicate (list ,@arg-predicate))
-       (progn ,@body)
-       (progn
-	 (setf *has-errors* t)
-	 (push ,msg *parsing-errors*))))
-
-
-
-(defmacro with-no-errors (&body body)
-  `(when (not *has-errors*)
-     ,@body))
-
-
-(defmacro with-valid-stream (&body body)
-  `(with-error (#'peek-valid-stream "Attempt to read an empty stream")
-     ,@body))
-
-
-(defun peek-token (&optional (test #'identity))
-  (with-valid-stream
-    (multiple-value-bind (token start-token)
-	(next-token)
-      (prog1
-	  (funcall test token)
-	(seek *pofile* start-token)))))
-
-
-(defmacro multiple-increment (times)
-  `(progn
-     ,@(loop for i from 0 below times collect
-	    `(increment-pointer *pofile*))))
-
-(defmacro define-tokenizer (name &rest regexps)
-  (alexandria:with-gensyms (scan tokens max-match)
-    (let ((funname (alexandria:format-symbol t "~@:(~a~)" name)))
-      `(defun ,funname (&key (hook-to-stringpos t))
-	 (if (peek-valid-stream)
-	     (let ((,tokens nil))
-	       (cond
-		 ((string= (char@) +escape-newline+)
-		  (multiple-increment 2)
-		  (,funname))
-		 ((member (char@) +blank-space+ :test #'string=)
-		  (increment-pointer *pofile*)
-		  (,funname))
-		 (t
-		  ,@(mapcar #'(lambda (regex) 
-				`(let ((,scan (multiple-value-list 
-					       (regex-scan *pofile* ,regex 
-							   hook-to-stringpos))))
-				   (when (first ,scan)
-				     (push (list
-					    (first ,scan)  ; the token
-					    (second ,scan) ; where the token starts
-					    (third ,scan)) ; where the token ends
-					   ,tokens))))
-			    regexps)
-		  (if (not (null ,tokens))
-		      (let ((,max-match (first (sort ,tokens 
-						     #'(lambda (a b)
-							 (> (length (first a)) (length (first b))))))))
-
-			(seek *pofile* (third ,max-match))
-			(values (first ,max-match) (second ,max-match)))
-		      (if (peek-end-stream :pos-offset +peek-length-tokenizer-on-error+)
-			  (progn
-			    (setf *has-errors* t)
-			    (push "Error: stream ended without valid token found" *parsing-errors*)
-			    (string (char@))
-			    nil)
-				    
-			  (progn 
-			    (setf *has-errors* t)
-			    (push (format nil 
-					  "Error: stream ended without valid token found starting from ~s"
-					  (regex-scan *pofile* ,(format nil ".{~a}"
-									+peek-length-tokenizer-on-error+) :sticky nil))
-				  *parsing-errors*)
-			    nil))))))
-	     
-	     nil)))))
-     
-
-     
-
-(define-tokenizer next-token +open-paren-regex+ +close-paren-regex+ +number+ +and-op+ +or-op-regex+ +<+ +>+ +<=+ +>=+ +!=+ +==+ +%+ +?-regex+ +colon+ +var+ +end-expression+ +plural-expression-label+ +comment-line+ +msgid-regexp+ +msgstr-regexp+ +flag-line+ +flag-fuzzy+ +msgstr[]-regexp+ +msgid-plural+)
 
 (defmacro define-is-stuff-p (test &rest operators)
   (alexandria:with-gensyms (str)
@@ -325,14 +177,14 @@
 
 (define-is-stuff-p string= +and-op+ +or-op+ +<+ +>+  +<=+  +>=+  +!=+  +==+  +%+  +?+  +colon+  +open-paren+  +close-paren+ +var+ +end-expression+ +fuzzy-flag+)
 
-(define-is-stuff-p cl-ppcre:scan +comment-line+ +msgid-regexp+ +msgstr-regexp+ +flag-line+ +msgstr[]-regexp+ +msgid-plural+)
+(define-is-stuff-p cl-ppcre:scan +msgid-regexp+ +msgstr-regexp+ +flag-line+ +msgstr[]-regexp+ +msgid-plural+)
 
 
 (defun is-number-p (str)
   (cl-ppcre:scan +number+ str))
 
 (defmacro parse-token ((var predicate msg &rest predicate-arg) &body body)
-  `(let-noerr ((,var (next-token)))
+  `(let-noerr ((,var (next-token *file*)))
        (with-error (,predicate ,msg ,@predicate-arg) ,@body)))
 
 
@@ -391,19 +243,6 @@
   (eq #'stack-if op))
 
 
-(defmacro defnocfun (name args &body body)
-  `(defun ,(alexandria:format-symbol t "~:@(~a~)" name) (,@args)
-     (when (peek-valid-stream)
-       (parse-comment-line))
-     ,@body))
-
-
-(defun parse-comment-line ()
-  (let-noerr ((peek (peek-token)))
-    (when (is-comment-line-p peek)
-      (next-token)
-      (parse-comment-line))))
-
 (defnocfun parse-msgid-group ()
   (let-noerr ((msgid (parse-msgid))
 	      (string (parse-escaped-string)))
@@ -415,22 +254,32 @@
     (values string msgid)))
 
 
+(defmacro with-line-mode (&body body)
+  `(progn
+     (setf (line-mode *file*) t)
+     ,@body))
+
+
 (defnocfun parse-po-file ()
-  (let-noerr ((plural-function (parse-header))
-	      (entries (parse-entries)))
-    (values entries plural-function *has-errors* *parsing-errors*)))
+  (with-line-mode  
+      (let-noerr ((plural-function (parse-header))
+		  (entries (parse-entries)))
+	(values entries plural-function *has-errors* *parsing-errors*))))
 
 
 (defnocfun parse-entries (&optional (res (make-hash-table :test 'equal)))
   (with-no-errors
     (if (peek-valid-stream)
-	(let-noerr ((peek (peek-token))
+	(let-noerr ((peek (peek-token *file*))
 		    (flag :untranslated))
 	  (when (is-flag-line-p peek)
-	    (next-token)
-	    (setf flag (alexandria:make-keyword (format nil "~:@(~a~)" (next-token)))))
+	    ;(format t "~a" *file*)
+	    (next-token *file*)
+	    ;(format t "~a" *file*)
+	    (setf flag (alexandria:make-keyword (format nil "~:@(~a~)" (next-token *file*)))))
 	  (when-debug
 	    (format t "flag ~s~%errors ~s~%" flag *parsing-errors*))
+	  
 	  (let-noerr ((msgid (parse-msgid-group)))
 	    (when-debug
 	      (format t "msgid ~s errors ~s~%" msgid *parsing-errors*))
@@ -452,7 +301,7 @@
 	res)))
 
 (defun parse-msgstr-group ()
-  (let-noerr ((peek (peek-token)))
+  (let-noerr ((peek (peek-token *file*)))
     (with-no-errors
       (cond
 	((is-msgid-plural-p peek)
@@ -477,11 +326,10 @@
     (parse-msgstr-plural)
     (let-noerr ((string (parse-escaped-string)))
       (if (and (peek-valid-stream)
-	       (is-msgstr[]-regexp-p (peek-token)))
+	       (is-msgstr[]-regexp-p (peek-token *file*)))
 	  (progn 
 	    (parse-msgstr-plural-group (push string res)))
 	  (reverse (push string res))))))
-
 
 (defnocfun parse-header ()
   (parse-msgid-group)
@@ -489,18 +337,7 @@
   (let-noerr ((header (parse-escaped-string)))
     (when-debug
       (format t "header~%~s~%" header))
-    (with-po-file (:buffer (cl-ppcre:regex-replace-all "(?m)\\n" header " "))
-      (with-no-errors 
-	(next-token :hook-to-stringpos nil);; the plural expression stars here
-	 (when-debug
-	   (format t "plural-expr: ****~a***~%" (peek-token)))
-	(multiple-value-bind (fun stack)
-	    (parse-plural-expression)
-	   (when-debug
-	     (format t "stack (~%~{~s~%~})~% fun ~a 1 -> ~a~%" stack fun (funcall fun 1)))
-	  fun)))))
-
-
+    (extract-plural-function header)))
 
 (defun extract-plural-function (header)
   (when-debug
@@ -508,9 +345,9 @@
 
   (with-po-file (:buffer (cl-ppcre:regex-replace-all "(?m)\\n" header " "))
     (with-no-errors 
-      (next-token :hook-to-stringpos nil);; the plural expression stars here
+      (next-token *file* :hook-to-stringpos nil);; the plural expression stars here
       (when-debug
-	(format t "plural-expr: ****~a***~%" (peek-token)))
+	(format t "plural-expr: ****~a***~%" (peek-token *file*)))
       (multiple-value-bind (fun stack)
 	  (parse-plural-expression)
 	(when-debug
@@ -552,9 +389,9 @@
 
 
 (defun parse-plural-expression ()
-  (let-noerr* ((peek (peek-token))
+  (let-noerr* ((peek (peek-token *file*))
 	       (stack (if (is-number-p peek)
-			  (list (parse-integer (next-token)))
+			  (list (parse-integer (next-token *file*)))
 			  (parse-ternary-expression))))
     
     (values #'(lambda (n) (let ((*n* n)) 
@@ -563,7 +400,7 @@
 
 (defun parse-ternary-expression ()
   (let-noerr ((first-term (parse-boolean-expression)))
-    (if (not (is-end-expression-p (peek-token)))
+    (if (not (is-end-expression-p (peek-token *file*)))
 	(let-noerr ((if-symbol (parse-if-symbol))
 		    (then-term (parse-expression)))
 	  (with-no-errors 
@@ -577,10 +414,10 @@
 
 
 (defun parse-expression ()
-  (let-noerr ((peek (peek-token)))
+  (let-noerr ((peek (peek-token *file*)))
     (cond 
       ((is-number-p peek)
-       (parse-integer (next-token)))
+       (parse-integer (next-token *file*)))
       (t
        (parse-ternary-expression)))))
 
@@ -589,7 +426,7 @@
 (defun parse-boolean-expression (&optional (stack '()))
   (if (peek-valid-stream)
       (with-no-errors
-	(let ((peek (peek-token)))
+	(let ((peek (peek-token *file*)))
 	  (cond
 	    ((is-close-paren-p peek)
 	     (parse-close-parent)
@@ -602,7 +439,7 @@
 	    ((is-var-p peek)
 	     (setf stack (parse-arithmetic-expression stack))
 	     (setf stack (parse-boolean-expression stack)))
-	    ((is-bool-op-p (peek-token))
+	    ((is-bool-op-p (peek-token *file*))
 	     (let-noerr ((boolean-op (parse-boolean-operator)))
 	       (setf stack (parse-boolean-expression stack))
 	       (push (string->function boolean-op) stack)))

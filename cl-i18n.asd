@@ -19,7 +19,7 @@
   :licence "LLGPL"
   :description "A gettext-style internationalisation framework for Common Lisp."
   :depends-on (:alexandria
-	       :cl-ppcre
+	       :cl-ppcre-unicode
 	       :osicat
 	       :babel)
   :components ((:file "package")
@@ -35,9 +35,17 @@
 		      :depends-on ("package"))
 	       (:file "translation-class"
 		      :depends-on ("plural-forms"))
-	       (:file "pofile"
-		      :depends-on ("buffered-input-file"
+	       (:file "parser"
+		      :depends-on ("buffered-input-file"))
+
+	       (:file "utx-file"
+		      :depends-on ("parser"
 				   "translation-class"))
+	       
+	       (:file "pofile"
+		      :depends-on ("parser"
+				   "translation-class"))
+
 	       (:file "mofile"
 		      :depends-on ("pofile"))
                (:file "base" 

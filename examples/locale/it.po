@@ -35,10 +35,6 @@ msgstr[1] "mele"
 
 #: src/ex1.lisp:3
 #: src/ex2.lisp:4
+#, fuzzy
 msgid "Invalid argument"
 msgstr "Argomento non valido"
-
-
-
-
-

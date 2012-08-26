@@ -1,9 +1,7 @@
 (in-package :cl-i18n)
 
-(alexandria:define-constant +default-buffer-size+ 20 :test #'=)
+(alexandria:define-constant +default-buffer-size+ 1000 :test #'=)
 (alexandria:define-constant +default-element-type+ '(unsigned-byte 8) :test #'equal)
-
-
 
 
 (defun make-buffer (&optional (length +default-buffer-size+))
@@ -12,7 +10,8 @@
   
 
 (defun buffer-uchar-length (buffer)
-  (length (babel:octets-to-string buffer)))
+  (babel:vector-size-in-chars buffer))
+
 
 
 ; file                      |b b b b b b b b b b b b b b b b b b b |
@@ -23,7 +22,7 @@
 ; uchars-count              |c c c c c c c c c c c ^
 
 
-(Defclass buffered-input-file ()
+(defclass buffered-input-file ()
   ((filename
     :initarg :filename
     :initform nil
@@ -52,6 +51,10 @@
     :initarg :cached-string
     :initform nil
     :accessor cached-string)
+   (line-mode
+    :initform nil
+    :initarg :line-mode
+    :accessor line-mode)
    (statistics
     :initarg :statistics
     :initform nil
@@ -65,8 +68,16 @@
 
 	  (map 'vector #'(lambda (v) (format nil "~x" v)) (buffer object))
 	  (map 'vector #'(lambda (v) (format nil "~b" v)) (buffer object))
-	  (babel:octets-to-string (buffer object))
-	  (length (babel:octets-to-string (buffer object)))
+	  (concatenate 'string
+		       (subseq (babel:octets-to-string (buffer object)) 0 
+			       (buffer-position object))
+		       #+sbcl "¶"
+		       #-sbcl "*"
+		       (subseq (babel:octets-to-string (buffer object)) 
+			       (buffer-position object)))
+	  
+	    
+	  (length (babel:octets-to-string (buffer object))) 
 	  (actual-file-position object)
 	  (buffer-position object)
 	  (logical-file-position object)
@@ -123,9 +134,12 @@
   
 (defgeneric regex-scan (object regex &optional sticky last-start last-end))
 
+(defgeneric regex-scan-line-mode (object regex &optional sticky last-start last-end))
+
 (defgeneric increment-pointer-then-get-char (object))
 (defgeneric get-char-then-increment-pointer (object))
 (defgeneric get-char (object))
+(defgeneric get-line (object &key line-separator))
 (defgeneric unget-char (object &optional position))
 
 (defgeneric increment-pointer (object))
@@ -168,13 +182,11 @@
 		     (new-vector (make-buffer 1)))
 		(setf (aref new-vector 0) new-byte)
 		(setf buffer (concatenate '(vector (unsigned-byte 8)) new-vector buffer))
-
-		(actual-file-position object (1- (actual-file-position object)))
-		(setf cached-string (babel:octets-to-string buffer))))
-
-
+		(actual-file-position object (1- (actual-file-position object)))))
 	    (error 'conditions:out-of-bounds :seq buffer :idx (actual-file-position object))))
+      (setf cached-string (babel:octets-to-string buffer))
       (actual-file-position object old-file-pos))))
+
 
 
 (defmethod read-adjust-buffer ((object buffered-input-file))
@@ -192,12 +204,21 @@
       (close stream))))
 
 
+(defmacro with-ustring ((var object) &body body)
+  `(let ((,var (if (null (cached-string ,object))
+		   (babel:octets-to-string (buffer ,object))
+		   (cached-string ,object))))
+     ,@body))
+
+
+
 (defmethod stream-length ((object buffered-input-file))
   (with-accessors ((stream inner-stream)
 		   (buffer buffer)) object
     (if stream
 	(file-length stream)
-	(length buffer))))
+	(with-ustring (ustring object)
+	  (length ustring)))))
 
 
 (defmethod actual-file-position ((object buffered-input-file) &optional (pos nil))
@@ -236,12 +257,6 @@
   `(let ((,var (actual-file-position ,object)))
      ,@body))
 
-
-(defmacro with-ustring ((var object) &body body)
-  `(let ((,var (if (null (cached-string ,object))
-		   (babel:octets-to-string (buffer ,object))
-		   (cached-string ,object))))
-     ,@body))
 
 
 
@@ -319,72 +334,105 @@
 		   (cached-string cached-string)
 		   (buffer-position buffer-position)
 		   (uchars-count uchars-count)) object
-    (with-file-position (inner-file-position object)
-      (if (< inner-file-position (stream-length object))
-	  
 
-	  (let* ((old-buffer (copy-array buffer))
-		 (file-pos-inc
-		  (if (< (+ inner-file-position +default-buffer-size+)
-			 (stream-length object))
-		      +default-buffer-size+
-		      (- (stream-length object) inner-file-position)))
-		  
-		 (actual-length
-		  (+ (length old-buffer) file-pos-inc)))
-	    (file-position stream (- (file-position stream)
-				     (length old-buffer)))
-	    (decf uchars-count (length (babel:octets-to-string old-buffer)))
-	    
+      (with-file-position (inner-file-position object)
+	(if (< inner-file-position (stream-length object))
+	    (with-ustring (old-string object)
+	      (let* ((old-buffer (copy-array buffer))
+		     (file-pos-inc
+		      (if (< (+ inner-file-position +default-buffer-size+)
+			     (stream-length object))
+			  +default-buffer-size+
+			  (- (stream-length object) inner-file-position)))
+		     
+		     (actual-length
+		      (+ (length old-buffer) file-pos-inc)))
+		(file-position stream (- (file-position stream)
+					 (length old-buffer)))
+		(decf uchars-count (length old-string))
+		(setf buffer (make-buffer actual-length))
+		(read-adjust-buffer object) ;; also set cached-string
+		
+		(incf uchars-count (length cached-string))
+		buffer))
+	    nil))))
 
-	    (setf buffer (make-buffer actual-length))
-	    (read-adjust-buffer object)
-
-	    (incf uchars-count (length cached-string))
-	    buffer)
-	  (progn 
-	    nil)))))
       
 
 (defmethod regex-scan ((object buffered-input-file)
-		       regex &optional (sticky t) (last-start nil) (last-end nil))
-  (with-accessors ((stream stream) (buffer buffer)
-		   (logical-file-position logical-file-position) 
-		   (buffer-position buffer-position)
-		   (uchars-count uchars-count)) object
-    (with-ustring (ustring object)
-      (multiple-value-bind (start end)
-	  (cl-ppcre:scan regex ustring 
-			 :start buffer-position)
-	(let ((all-buffer-length (- uchars-count (length ustring))))
-	  (if (not start) ; match not found
-	      (if (enlarge-buffer object)
-		  (regex-scan object regex sticky last-start last-end)
-		  (progn
-		    (replace-buffer object)
-		    (values nil nil nil)))
-	      (if (or (not sticky)
-		      (equal start buffer-position))
-		  (if (and last-start
-			   last-end
-			   (= start last-start)
-			   (= end last-end))
-		      (values (subseq ustring start end) 
-			      (+ start all-buffer-length)
-			      (+ end all-buffer-length))
-
-		      (if (enlarge-buffer object)
-			  (regex-scan object regex sticky start end)
+		       regex &optional (sticky t)
+		       (last-start nil) (last-end nil))
+  (if (line-mode object)
+      (regex-scan-line-mode object regex sticky last-start last-end)
+      (with-accessors ((stream stream) (buffer buffer)
+		       (logical-file-position logical-file-position) 
+		       (buffer-position buffer-position)
+		       (uchars-count uchars-count)) object
+	(with-ustring (ustring object)
+	  (multiple-value-bind (start end)
+	      (cl-ppcre:scan regex ustring 
+			     :start buffer-position)
+	    (let ((all-buffer-length (- uchars-count (length ustring))))
+	      (if (not start) ; match not found
+		  (if (enlarge-buffer object)
+		      (regex-scan object regex sticky last-start last-end)
+		      (progn
+			(replace-buffer object)
+			(values nil nil nil)))
+		  (if (or (not sticky)
+			  (equal start buffer-position))
+		      (if (and last-start
+			       last-end
+			       (= start last-start)
+			       (= end last-end))
 			  (values (subseq ustring start end) 
 				  (+ start all-buffer-length)
-				  (+ end all-buffer-length))))
-		  (values nil nil nil))))))))
+				  (+ end all-buffer-length))
+
+			  (if (enlarge-buffer object)
+			      (regex-scan object regex sticky start end)
+			      (values (subseq ustring start end) 
+				      (+ start all-buffer-length)
+				      (+ end all-buffer-length))))
+		      (values nil nil nil)))))))))
+
+
+
+(defmethod regex-scan-line-mode ((object buffered-input-file)
+ 				 regex &optional (sticky t)
+ 				 (last-start nil) (last-end nil))
+  (declare (ignore last-start last-end))
+  (multiple-value-bind (line line-length line-start)
+      (cl-i18n:get-line object)
+    (declare (ignore line-length))
+    (unwind-protect
+	 (multiple-value-bind (start end)
+	     (cl-ppcre:scan regex line)
+	   (if (not start) ; match not found
+	       (values nil nil nil)
+	       (if sticky
+		   (if (= start 0) 
+		       (progn
+			 (values (subseq line start end) 
+				 (+ line-start start)
+				 (+ line-start start end)))
+		       (values nil nil nil))
+		   (progn
+		     (values (subseq line start end) 
+			     (+ line-start start)
+			     (+ line-start start end))))))
+      (cl-i18n:seek object line-start))))
+
+	   
 
 
 
 (defmethod get-char-then-increment-pointer ((object buffered-input-file))
-  (when (get-char object)
-    (increment-pointer object)))
+  (let ((char (get-char object)))
+    (when char
+      (increment-pointer object))
+    char))
+	
 
 (defmethod increment-pointer-then-get-char ((object buffered-input-file))
   (when (increment-pointer object)
@@ -400,6 +448,18 @@
       (if (valid-stream-p object)
 	  (elt uchar-buff buffer-position)
 	  nil))))
+
+
+(defmethod get-line (object &key (line-separator #\newline))
+  (do* ((start-pos (logical-file-position object))
+	(count 0 (1+ count))
+	(read (get-char-then-increment-pointer object)
+	      (get-char-then-increment-pointer object))
+	(line (string read) (concatenate 'string line (string read))))
+      ((or (not read) 
+	   (char= read line-separator)) 
+       (values line count start-pos))))
+  
 
 
 (defmethod unget-char ((object buffered-input-file)
