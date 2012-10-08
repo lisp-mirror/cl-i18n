@@ -273,9 +273,7 @@
 	(let-noerr ((peek (peek-token *file*))
 		    (flag :untranslated))
 	  (when (is-flag-line-p peek)
-	    ;(format t "~a" *file*)
 	    (next-token *file*)
-	    ;(format t "~a" *file*)
 	    (setf flag (alexandria:make-keyword (format nil "~:@(~a~)" (next-token *file*)))))
 	  (when-debug
 	    (format t "flag ~s~%errors ~s~%" flag *parsing-errors*))
@@ -345,7 +343,7 @@
 
   (with-po-file (:buffer (cl-ppcre:regex-replace-all "(?m)\\n" header " "))
     (with-no-errors 
-      (next-token *file* :hook-to-stringpos nil);; the plural expression stars here
+      (next-token *file* :hook-to-stringpos nil);; the plural expression starts here
       (when-debug
 	(format t "plural-expr: ****~a***~%" (peek-token *file*)))
       (multiple-value-bind (fun stack)
@@ -357,7 +355,7 @@
   
 (defun parse-escaped-string (&optional (res "") (delimc nil))
   (if (peek-valid-stream)
-      (handler-bind ((conditions:out-of-bounds
+      (handler-bind ((i18n-conditions:out-of-bounds
 		      #'(lambda(e)
 			  (declare (ignore e))
 			  (invoke-restart 'use-value ""))))

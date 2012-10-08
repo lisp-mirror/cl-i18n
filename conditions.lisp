@@ -5,7 +5,7 @@
 ;; (http://opensource.franz.com/preamble.html),
 ;; known as the LLGPL
 
-(in-package conditions)
+(in-package i18n-conditions)
 
 (defmacro defcond (type)
   `(define-condition ,(alexandria:format-symbol t "TEXT-~a" (string-upcase type))

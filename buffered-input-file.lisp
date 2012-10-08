@@ -1,3 +1,10 @@
+;; This software is Copyright (c) cage, 2012.
+;; cage grants you the rights to distribute
+;; and use this software as governed by the terms
+;; of the Lisp Lesser GNU Public License
+;; (http://opensource.franz.com/preamble.html),
+;; known as the LLGPL
+
 (in-package :cl-i18n)
 
 (alexandria:define-constant +default-buffer-size+ 1000 :test #'=)
@@ -183,7 +190,7 @@
 		(setf (aref new-vector 0) new-byte)
 		(setf buffer (concatenate '(vector (unsigned-byte 8)) new-vector buffer))
 		(actual-file-position object (1- (actual-file-position object)))))
-	    (error 'conditions:out-of-bounds :seq buffer :idx (actual-file-position object))))
+	    (error 'i18n-conditions:out-of-bounds :seq buffer :idx (actual-file-position object))))
       (setf cached-string (babel:octets-to-string buffer))
       (actual-file-position object old-file-pos))))
 
@@ -312,7 +319,7 @@
 		 (new-buffer-length
 		  (if (> (- inner-file-position old-buffer-length +default-buffer-size+) 0)
 		      +default-buffer-size+
-		      (- inner-file-position +default-buffer-size+))))
+		      (- inner-file-position old-buffer-length))))
 	    (actual-file-position object (- inner-file-position old-buffer-length new-buffer-length))
 
 	    (setf buffer (make-buffer new-buffer-length))
@@ -338,7 +345,7 @@
       (with-file-position (inner-file-position object)
 	(if (< inner-file-position (stream-length object))
 	    (with-ustring (old-string object)
-	      (let* ((old-buffer (copy-array buffer))
+	      (let* ((old-buffer (alexandria:copy-array buffer))
 		     (file-pos-inc
 		      (if (< (+ inner-file-position +default-buffer-size+)
 			     (stream-length object))

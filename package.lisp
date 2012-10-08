@@ -5,8 +5,8 @@
 ;; (http://opensource.franz.com/preamble.html),
 ;; known as the LLGPL
 
-(defpackage :conditions (:use 
-			:cl)
+(defpackage :i18n-conditions (:use 
+			      :cl)
 	    (:export
 	     :no-translation-table-error
 	     :parsing-pofile-error

@@ -22,7 +22,7 @@
 ;; change accordingly to the actual location of the directory cointaining
 ;; the translation files
 (let ((*translation-file-root* "cl-i18n/examples/locale/"))
-  (handler-bind ((conditions:no-translation-table-error ;; Or just (load-language "italian.lisp")
+  (handler-bind ((i18n-conditions:no-translation-table-error ;; Or just (load-language "italian.lisp")
 		  #'(lambda(e)
 		      (declare (ignore e))
 		      (invoke-restart 'load-language "italian.lisp" nil))))

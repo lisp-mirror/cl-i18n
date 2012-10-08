@@ -110,7 +110,7 @@
       (let ((char (get-char *file*)))
 	(if (not (null char))
 	    (string char)
-	    (error 'conditions:out-of-bounds :seq *file* :idx *string-pos*)))
+	    (error 'i18n-conditions:out-of-bounds :seq *file* :idx *string-pos*)))
     (ignore-error () ())
     (use-value (e) e)))
 
@@ -121,7 +121,7 @@
 	    (progn
 	      (increment-pointer *file*)
 	      (string char))
-	    (error 'conditions:out-of-bounds :seq *file* :idx *string-pos*)))
+	    (error 'i18n-conditions:out-of-bounds :seq *file* :idx *string-pos*)))
     (ignore-error () ())
     (use-value (e) e)))
 
@@ -137,7 +137,7 @@
 		(when go-back
 		  (decrement-pointer *file*))
 		(string char))
-	      (error 'conditions:out-of-bounds :seq *file* :idx *string-pos*))))
+	      (error 'i18n-conditions:out-of-bounds :seq *file* :idx *string-pos*))))
     (ignore-error () ())
     (use-value (e) e)))
 
