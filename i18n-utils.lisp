@@ -35,7 +35,7 @@
 	 (root (if (> (length path-splitted) 1)
 		   (reduce #'(lambda (a b) (concatenate 'string a cl-i18n:*directory-sep* b))
 			   (subseq path-splitted 0 (1- (length path-splitted))))
-		   (first path-splitted)))
+		   "."))
 	 (output-filename (car (last path-splitted)))
 	 (output-filename-noext (if (cl-ppcre:scan-to-strings ".*\\." output-filename)
 				    (subseq (cl-ppcre:scan-to-strings ".*\\." output-filename)
@@ -43,25 +43,25 @@
 						   (cl-ppcre:scan-to-strings ".*\\." output-filename))))
 				    output-filename))
 	 (cl-i18n:*translation-file-root* root))
-      (multiple-value-bind (i18n-table readed-plural-function)
-	  (cl-i18n:init-translation-table output-filename 
-					  :store-hashtable nil
-					  :store-plural-function nil)
-	(when (null readed-plural-function)
-	  (setf readed-plural-function plural-function))
-	(let ((new-strings (get-strings source-filename)))
-	  (mapc #'(lambda (s) (when (not (gethash s i18n-table))
-				(let ((similar (similar-phrase s i18n-table :threshold fuzziness)))
-				  (setf (gethash s i18n-table) 
-					(cl-i18n:make-translation (if (not (null similar))
-								      similar
-								      "")
-								  (if (not (null similar))
-								      cl-i18n:+fuzzy-flag+
-								      cl-i18n:+untranslated-flag+))))))
-		new-strings)
-	  
-	  (cl-i18n:save-language output-filename-noext nil i18n-table readed-plural-function)))))
+
+    (multiple-value-bind (i18n-table readed-plural-function)
+	(cl-i18n:init-translation-table output-filename
+					:store-hashtable nil
+					:store-plural-function nil)
+      (when (null readed-plural-function)
+	(setf readed-plural-function plural-function))
+      (let ((new-strings (get-strings source-filename)))
+	(mapc #'(lambda (s) (when (not (gethash s i18n-table))
+			      (let ((similar (similar-phrase s i18n-table :threshold fuzziness)))
+				(setf (gethash s i18n-table)
+				      (cl-i18n:make-translation (if (not (null similar))
+								    similar
+								    "")
+								(if (not (null similar))
+								    cl-i18n:+fuzzy-flag+
+								    cl-i18n:+untranslated-flag+))))))
+	      new-strings)
+	(cl-i18n:save-language output-filename-noext nil i18n-table readed-plural-function)))))
 	  
 
 
