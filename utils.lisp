@@ -43,6 +43,9 @@
 	  seq))))
 
 
+(defun create-brand-new-file (file)
+  (open file :direction :probe :if-does-not-exist :create))
+
 (defun uchar-length (leading-byte)
   (let ((ones (do* ((ct 7 (1- ct))
 		    (bit (ldb (byte 1 ct) leading-byte) 

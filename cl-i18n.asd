@@ -23,6 +23,8 @@
 	       :osicat
 	       :babel)
   :components ((:file "package")
+	       (:file "function-name"
+		      :depends-on ("package"))
 	       (:file "utils"
 		      :depends-on ("package"))
 	       (:file "conditions"

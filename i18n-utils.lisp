@@ -24,29 +24,45 @@
     (first min)))
 				      
 
-(defun generate-i18n-file (source-filename localization-filename &key (fuzziness 3))
+(defun generate-i18n-file (source-filename localization-filename &key (fuzziness 3)
+			   (plural-function #'cl-i18n:english-plural-form))
   "Reads a Lisp source file, get all #! strings and generate the translation
   resource, or merge with it if the translation resource already exists.
   Untranslated strings that show levenshtein distance less than :fuzziness 
   with a translated one get the translation of the latter; such translation 
   are marked as \"fuzzy\" in the output file"
-
-  (let* ((i18n-table  (read-i18n-file localization-filename))
-         (new-strings (get-strings source-filename)))
-    (mapc #'(lambda (s) (when (not (gethash s i18n-table))
-			  (let ((similar (similar-phrase s i18n-table :threshold fuzziness)))
-			    (setf (gethash s i18n-table) 
-				  (cl-i18n:make-translation (if (not (null similar))
-								similar
-								"")
-							    (if (not (null similar))
-								cl-i18n:+fuzzy-flag+
-								cl-i18n:+untranslated-flag+))))))
-	  new-strings)
-    (with-open-file (stream localization-filename :direction :output :if-exists :supersede)
-      (format stream "(~%")
-      (format stream "~{~a~}" (cl-i18n:translation-hash-table->list i18n-table))
-      (format stream ")~%"))))
+  (let* ((path-splitted (cl-ppcre:split cl-i18n:*directory-sep-regexp* localization-filename))
+	 (root (if (> (length path-splitted) 1)
+		   (reduce #'(lambda (a b) (concatenate 'string a cl-i18n:*directory-sep* b))
+			   (subseq path-splitted 0 (1- (length path-splitted))))
+		   (first path-splitted)))
+	 (output-filename (car (last path-splitted)))
+	 (output-filename-noext (if (cl-ppcre:scan-to-strings ".*\\." output-filename)
+				    (subseq (cl-ppcre:scan-to-strings ".*\\." output-filename)
+					    0 (1- (length 
+						   (cl-ppcre:scan-to-strings ".*\\." output-filename))))
+				    output-filename))
+	 (cl-i18n:*translation-file-root* root))
+      (multiple-value-bind (i18n-table readed-plural-function)
+	  (cl-i18n:init-translation-table output-filename 
+					  :store-hashtable nil
+					  :store-plural-function nil)
+	(when (null readed-plural-function)
+	  (setf readed-plural-function plural-function))
+	(let ((new-strings (get-strings source-filename)))
+	  (mapc #'(lambda (s) (when (not (gethash s i18n-table))
+				(let ((similar (similar-phrase s i18n-table :threshold fuzziness)))
+				  (setf (gethash s i18n-table) 
+					(cl-i18n:make-translation (if (not (null similar))
+								      similar
+								      "")
+								  (if (not (null similar))
+								      cl-i18n:+fuzzy-flag+
+								      cl-i18n:+untranslated-flag+))))))
+		new-strings)
+	  
+	  (cl-i18n:save-language output-filename-noext nil i18n-table readed-plural-function)))))
+	  
 
 
 

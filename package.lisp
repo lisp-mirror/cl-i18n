@@ -103,7 +103,9 @@
 	     :+translation+
 	     :+plurals-form+
 	     :+status+
-	     :+plurals+)
+	     :+plurals+
+	     :*directory-sep-regexp*
+	     :*directory-sep*)
 	    (:documentation "An internationalisation framework for Common Lisp"))
 
 

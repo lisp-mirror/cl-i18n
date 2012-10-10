@@ -29,15 +29,24 @@
 (defparameter *translation-collect* nil)
 
 
-(defun save-language (lang &optional destination)
+(defun save-language (lang &optional (destination nil)
+		      (translation-table nil) (plural-function nil))
   "Save a translation table to a file, default path is *translation-file-root* \"/\" lang"
-  (with-open-file (file 
-		    (or destination
-                        (concatenate 'string *translation-file-root* "/" lang ".lisp"))
-		    :if-does-not-exist :create
-		    :if-exists :supersede
-		    :direction :output)
-    (format file "~a" (translation-hash-table->list *translation-table*))))
+  (let ((output-file (or destination
+			 (concatenate 'string *translation-file-root* *directory-sep* lang ".lisp"))))
+    (create-brand-new-file output-file)
+    (with-open-file (file output-file
+			  :if-does-not-exist :create
+			  :if-exists :supersede
+			  :direction :output)
+      (format file "~(~s~)~%~a"
+	      (if plural-function
+		  (symbol-name (get-function-name plural-function))
+		  *plural-form-function*)
+	      (translation-hash-table->list 
+	       (if translation-table
+		   translation-table
+		   *translation-table*))))))
 
 
 (defmacro if-not-utf8-read-whole ((filename) &body body)
@@ -95,11 +104,18 @@
 		 (setf t-table hashtable))))))
 
       ((scan +lisp-table-ext+ actual-filename)
-       (with-open-file (file actual-filename)
-	 (setf local-plural-function (symbol-function (alexandria:format-symbol 'cl-i18n "~@:(~a~)"
-										(read file))))
-	 (setf t-table (translation-list->hash-table (read file) 
-						     (make-hash-table :test 'equal)))))
+       (handler-case 
+	   (with-open-file (file actual-filename) :if-does-not-exist :error
+	     (setf local-plural-function (symbol-function (alexandria:format-symbol 'cl-i18n "~@:(~a~)"
+										    (read file))))
+	     (setf t-table (translation-list->hash-table (read file) 
+							 (make-hash-table :test 'equal))))
+	 (end-of-file () (setf local-plural-function #'english-plural-form
+			       t-table (make-hash-table :test 'equal)))
+	 (file-error () (progn
+			  (create-brand-new-file actual-filename)
+			  (setf local-plural-function #'english-plural-form
+				t-table (make-hash-table :test 'equal))))))
       (t ;;maybe a MO file?
        (with-mo-file (stream mofile actual-filename)
 	 (parse-mofile mofile stream)
