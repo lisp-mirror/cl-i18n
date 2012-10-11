@@ -24,18 +24,18 @@
     :initform ""
     :initarg  :translated
     :accessor translated
-    :type 'string
+    :type string
     :documentation "The translated string")
    (plural-form
     :initform ""
     :initarg  :plural-form
     :accessor plural-form
-    :type 'string)
+    :type string)
    (plural-translated
     :initform '()
     :initarg  :plural-translated
     :accessor plural-translated
-    :type 'list
+    :type list
     :documentation "a list of string for each valid plural form")
    (flag
     :initform +untranslated-flag+
