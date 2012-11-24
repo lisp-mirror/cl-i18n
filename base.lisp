@@ -159,7 +159,8 @@
     (when (and (eql (hash-table-count *translation-table*) 0) (not *translation-collect*))
       (error 'i18n-conditions:no-translation-table-error :text "cl-i18n: translation table not initialized! Call \"load-language\" first."))
     (load-language (value &optional (store-plural t)) (load-language value :store-plural-function store-plural))
-    (use-value (value) (setf *translation-table* value)))
+    (use-value (value) (setf *translation-table* value))
+    (return-untranslated () str))
   (multiple-value-bind (translation found) (gethash str *translation-table*)
     (if (or (not found) (string= (translated translation) ""))
 	(if *translation-collect*

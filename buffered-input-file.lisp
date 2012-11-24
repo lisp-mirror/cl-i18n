@@ -7,7 +7,7 @@
 
 (in-package :cl-i18n)
 
-(alexandria:define-constant +default-buffer-size+ 1000 :test #'=)
+(alexandria:define-constant +default-buffer-size+ 100000 :test #'=)
 (alexandria:define-constant +default-element-type+ '(unsigned-byte 8) :test #'equal)
 
 
@@ -78,8 +78,7 @@
 	  (concatenate 'string
 		       (subseq (babel:octets-to-string (buffer object)) 0 
 			       (buffer-position object))
-		       #+sbcl "¶"
-		       #-sbcl "*"
+		       "*"
 		       (subseq (babel:octets-to-string (buffer object)) 
 			       (buffer-position object)))
 	  

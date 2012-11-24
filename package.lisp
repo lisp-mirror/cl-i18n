@@ -35,10 +35,10 @@
 	     :*has-errors*
 	     :*parsing-errors*
 	     :peek-token
+	     :peek-token-suppress-errors
 	     :parse-comment-line
 	     :seek
 	     :get-line
-
 	     :translation
 	     :translated
 	     :flag
@@ -87,6 +87,8 @@
 	     :save-language 
 	     :translate
 	     :ntranslate
+	     :return-untranslated
+	     :use-value
 	     :with-translation
 	     :with-po-file
 	     :with-mo-file
