@@ -228,7 +228,7 @@
       (declare (ignore char1 char2))
       (if (char= (read-char stream) #\")
         `(translate ,(read-lisp-string stream))
-        (error "cl-i18n: the read macro `#!' must precede a double-quoted string!"))))
+        (error "cl-i18n: the read macro '#!' must precede a double-quoted string!"))))
 
 (set-dispatch-macro-character #\# #\§ 
   #'(lambda (stream char1 num)

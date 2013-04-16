@@ -14,6 +14,7 @@
 (defsystem cl-i18n
   :name "cl-i18n"
   :version "0.4.1"
+  :encoding :utf-8
   :maintainer "cage <cage@katamail.com>"
   :author "Leslie P. Polzer <polzer@stardawn.org>, Vilson Vieira <vilson@void.cc>, cage <cage@katamail.com>"
   :licence "LLGPL"
@@ -53,6 +54,7 @@
                (:file "base" 
 		      :depends-on ("plural-forms"
 				   "translation-class"
+				   "utx-file"
 				   "mofile"))
                (:file "i18n-utils" 
 		      :depends-on ("base"))))

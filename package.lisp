@@ -27,6 +27,7 @@
 	     :defnocfun
 	     :with-error
 	     :with-no-errors
+	     :with-no-errors*
 	     :peek-valid-stream
 	     :is-comment-line-p
 	     :next-token

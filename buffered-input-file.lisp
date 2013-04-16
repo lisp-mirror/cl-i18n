@@ -544,6 +544,6 @@
 		     (increment-pointer object)
 		     (decrement-pointer object)))))
 	(when (and (>= pos 0)
-		   (< pos (length buffer)))
+		   (<= pos (length buffer)))
 	  (setf buffer-position pos
 		logical-file-position pos)))))

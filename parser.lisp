@@ -45,6 +45,13 @@
   `(when (not *has-errors*)
      ,@body))
 
+(defmacro with-no-errors* (&body forms)
+  (when forms
+    `(with-no-errors
+       ,(first forms)
+       (with-no-errors* ,@(rest forms)))))
+
+
 (defmacro let-noerr (forms &body body)
   (if (not (null forms))
       `(with-no-errors
