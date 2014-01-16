@@ -69,47 +69,48 @@
 
 (defparameter *n* 0)
 
-(defun == (&rest args) 
-  (if (= (first args) (second args))
+(defun == (a b)
+  (if (= a b)
       1
       0))
   
-(defun != (&rest args) 
-  (if (/= (first args) (second args))
+(defun != (a b)
+  (if (/= a b)
       1
       0))
 
-(defun % (&rest args) (mod (first args) (second args)))
+(defun % (a b)
+  (mod a b))
 
-(defun && (&rest args)
-  (if (and (> (first args) 0)
-	   (> (second args) 0))
+(defun && (a b)
+  (if (and (> a 0)
+	   (> b 0))
       1
       0))
 
-(defun bool-or (&rest args) 
-  (if (or (> (first args) 0)
-	  (> (second args) 0))
+(defun bool-or (a b)
+  (if (or (> a 0)
+	  (> b 0))
       1
       0))
 
-(defun >* (&rest args) 
-  (if (> (first args) (second args))
+(defun >* (a b)
+  (if (> a b)
       1
       0))
 
-(defun >=* (&rest args) 
-  (if (>= (first args) (second args))
+(defun >=* (a b)
+  (if (>= a b)
       1
       0))
 
-(defun <* (&rest args) 
-  (if (< (first args) (second args))
+(defun <* (a b)
+  (if (< a b)
       1
       0))
 
-(defun <=* (&rest args) 
-  (if (<= (first args) (second args))
+(defun <=* (a b)
+  (if (<= a b)
       1
       0))
 
