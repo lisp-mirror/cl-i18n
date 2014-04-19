@@ -115,7 +115,7 @@
    The strings are merged with a translation file (if exists)"
   (mapc #'(lambda (f) (generate-i18n-file (namestring f) output))
 	(remove-if-not #'(lambda (p) (cl-ppcre:scan ext (file-namestring p)))
-		       (osicat:list-directory path))))
+		       (uiop/filesystem:directory-files path))))
 
 
 (defun convert-dictionary-format (old &key (plural-function 'cl-i18n:n/=1-plural-form))

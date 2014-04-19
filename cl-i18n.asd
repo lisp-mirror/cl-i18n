@@ -13,7 +13,7 @@
 
 (defsystem cl-i18n
   :name "cl-i18n"
-  :version "0.4.1"
+  :version "0.5.0"
   :encoding :utf-8
   :maintainer "cage <cage@katamail.com>"
   :author "Leslie P. Polzer <polzer@stardawn.org>, Vilson Vieira <vilson@void.cc>, cage <cage@katamail.com>"
@@ -21,7 +21,6 @@
   :description "A gettext-style internationalisation framework for Common Lisp."
   :depends-on (:alexandria
 	       :cl-ppcre-unicode
-	       :osicat
 	       :babel)
   :components ((:file "package")
 	       (:file "function-name"

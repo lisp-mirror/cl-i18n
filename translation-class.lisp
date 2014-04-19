@@ -66,7 +66,6 @@
   (setf (flag object) (flag old))
   object)
   
-
 (defun make-translation (translation &optional (flag +untranslated-flag+)
 			 (plural-form "") (plural-translated '()))
   "Create an instance of a translation class"
