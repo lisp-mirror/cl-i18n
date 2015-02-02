@@ -20,6 +20,7 @@
   :licence "LLGPL"
   :description "A gettext-style internationalisation framework for Common Lisp."
   :depends-on (:alexandria
+	       #-asdf3 :uiop
 	       :cl-ppcre-unicode
 	       :babel)
   :components ((:file "package")

@@ -92,7 +92,9 @@
 (defun list-directory-entries (d)
   "Does not resolve symlinks to avoid loop"
   (and (directoryp d)
-       (uiop/filesystem:directory-files d)))
+       (nconc
+	(uiop/filesystem:subdirectories d)
+	(uiop/filesystem:directory-files d))))
 
 (defun remove-regular-files (entries)
   (remove-if #'(lambda (a) (not (directoryp a))) entries))
@@ -139,15 +141,16 @@
 	     (> average-mofile-count *valid-dir-average-mofile-repo*)))
       nil))
 
-(defun scan-mo-files (root &optional (db '()))
+(defun scan-mo-files (root &optional (db '()) (max-depth 10))
   (let ((dirs (list-directory-entries root))
 	(direct-child-count 0))
-    (if dirs
+    (if (and dirs
+	     (> max-depth 0))
 	(progn
 	  (incf direct-child-count (count-mo-files-direct-children root))
 	  (loop for ent in dirs do
 	       (when (directoryp ent)
-		 (let ((children-count (scan-mo-files ent db)))
+		 (let ((children-count (scan-mo-files ent db (1- max-depth))))
 		   (setf (getf db (alexandria:make-keyword (pathname->string ent)))
 			 children-count)
 		   (incf direct-child-count children-count))))
@@ -172,7 +175,7 @@
 			(not (excluded-path-p ent)))
 	       (push ent stack))))))))
     
-(defun search-mo-repository (root)
+(defun search-mo-repository (root &key (max-path-depth 10))
   (let ((seen nil)) 
     (labels ((get-max-count-dir (root)
 	       (let ((max-count (list "" 0)))
@@ -185,13 +188,19 @@
 		       (when (> count (second max-count))
 			 (setf max-count (list dir count))))))
 		 max-count)))
-    (let ((catalog  (find-if #'(lambda (p)
-    				 (mo-repository-p (second 
-    						   (multiple-value-list (scan-mo-files p)))))
-    			     *well-known-mofile-path*)))
+    (let ((catalog (find-if #'(lambda (p)
+				(mo-repository-p
+				 (second
+				  (multiple-value-list (scan-mo-files p
+								      '()
+								      max-path-depth)))))
+			    *well-known-mofile-path*)))
       (if (not catalog)
       	  (do ((dir (first (get-max-count-dir root)) (first (get-max-count-dir dir))))
-      	      ((mo-repository-p (second (multiple-value-list (scan-mo-files dir)))) dir))
+      	      ((mo-repository-p (second (multiple-value-list (scan-mo-files dir
+									    '()
+									    max-path-depth))))
+	       dir))
       	  catalog)))))
 
 
