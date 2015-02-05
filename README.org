@@ -1,7 +1,7 @@
 * Prerequisites:
 - ASDF
+- uiop (if your ASDF version is < 3)
 - cl-ppcre
-- osicat
 - alexandria
 - babel
 
