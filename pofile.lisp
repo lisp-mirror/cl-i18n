@@ -142,7 +142,7 @@
     ((string= fun "<=")
      #'<=*)
     (t
-     (symbol-function (intern fun)))))
+     (symbol-function (intern fun :cl-i18n)))))
 
 
 (defun unescaped-char (char)
