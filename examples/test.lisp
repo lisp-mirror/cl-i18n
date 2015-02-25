@@ -55,8 +55,9 @@
 ;; a way similar to GNU gettext style API; please note we are assuming
 ;; "/usr/share/locale/" as the path where the catalog can be found and
 ;; also foo.mo is there...
+;; We also let the library guess the right locale with find-locale
 (let ((*translation-file-root* "/usr/share/locale/"))
-   (load-language "foo" :locale "it")
+   (load-language "foo" :locale (find-locale))
    (format t "~a~%"  #!"Browse")
    (format t "~a~%" #!"Save as..."))
 

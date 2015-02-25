@@ -202,5 +202,3 @@
 									    max-path-depth))))
 	       dir))
       	  catalog)))))
-
-

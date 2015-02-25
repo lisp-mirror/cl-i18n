@@ -7,8 +7,6 @@
 
 (in-package :cl-i18n)
 
-
-
 (defparameter *translation-file-root* "."
   "The directory where translation files are stored.
   Defaults to current directory.")
@@ -28,6 +26,90 @@
 
 (defparameter *translation-collect* nil)
 
+(defclass locale-definition ()
+  ((language
+    :initform nil
+    :initarg  :language
+    :accessor language)
+   (territory
+    :initform nil
+    :initarg  :territory
+    :accessor territory)
+   (codeset
+    :initform nil
+    :initarg  :codeset
+    :accessor codeset)
+   (modifier
+    :initform nil
+    :initarg  :modifier
+    :accessor modifier)))
+
+(defmethod print-object ((object locale-definition) stream)
+  (with-accessors ((language language) (territory territory)
+		   (codeset codeset) (modifier modifier)) object
+      (print-unreadable-object (object stream :type t :identity t)
+	(format stream
+		"lang: ~s terr: ~s codeset ~s modifier ~s"
+		language territory codeset modifier))))
+
+(defgeneric all-possible-locale-dir (object))
+
+(defgeneric fittest-actual-locale-dir (object))
+
+(defgeneric fittest-actual-locale-file (object filename))
+
+(defmethod all-possible-locale-dir ((object locale-definition))
+  (with-accessors ((language language) (territory territory)
+		   (codeset codeset) (modifier modifier)) object
+    (remove-duplicates
+     (vector
+      (format nil "~a_~a.~a~@[@~a~]" language territory codeset modifier)
+      (format nil "~a_~a~@[.~a~]" language territory codeset)
+      (format nil "~a~@[_~a~]" language territory)
+      (format nil "~a" language))
+     :test #'string=)))
+
+(defmethod fittest-actual-locale-dir ((object locale-definition))
+  (loop for p across (all-possible-locale-dir object) do
+       (let ((path (format nil "~a~a~a~a~a"
+			   *translation-file-root*
+			   *directory-sep*
+			   p
+			   *directory-sep*
+			   *categories*)))
+	 (when (uiop:directory-exists-p path)
+	   (return-from fittest-actual-locale-dir path))))
+  nil)
+
+(defmethod fittest-actual-locale-file ((object locale-definition) filename)
+  (loop for p across (all-possible-locale-dir object) do
+       (let ((path (format nil "~a~a~a~a~a~a~a.mo"
+			   *translation-file-root*
+			   *directory-sep*
+			   p
+			   *directory-sep*
+			   *categories*
+			   *directory-sep*
+			   filename)))
+	 (when (uiop:file-exists-p path)
+	   (return-from fittest-actual-locale-file path))))
+  nil)
+
+(defun find-locale ()
+  (let ((raw (or (uiop:getenvp "LC_ALL")
+		 (uiop:getenvp *categories*)
+		 (uiop:getenvp "LANG"))))
+    (if raw
+	(multiple-value-bind (match registers)
+	    (cl-ppcre:scan-to-strings "([^_]+)_?([^\\.]+)?\\.?([^@]+)?@?(.+)?" raw)
+	  (if match
+	      (make-instance 'locale-definition
+			     :language  (elt registers 0)
+			     :territory (elt registers 1)
+			     :codeset   (elt registers 2)
+			     :modifier  (elt registers 3))
+	      nil))
+	nil)))
 
 (defun save-language (lang &optional (destination nil)
 		      (translation-table nil) (plural-function nil))
@@ -68,19 +150,23 @@
    setf'd too. The *plural-form-function* is setf'd too"
   (let ((t-table (make-hash-table :test 'equal))
 	(local-plural-function nil)
-	(actual-filename (if *locale*
-			     (format nil "~a~a~a~a~a~a~a.mo" 
-				     *translation-file-root*
-				     *directory-sep*
-				     *locale*
-				     *directory-sep*
-				     *categories*
-				     *directory-sep*
-				     filename)
-			     (format nil "~a~a~a" 
-				     *translation-file-root*  
-				     *directory-sep*
-				     filename))))
+	(actual-filename (cond
+			   ((typep *locale* 'locale-definition)
+			    (fittest-actual-locale-file *locale* filename))
+			   ((typep *locale* 'string)
+			    (format nil "~a~a~a~a~a~a~a.mo"
+				    *translation-file-root*
+				    *directory-sep*
+				    *locale*
+				    *directory-sep*
+				    *categories*
+				    *directory-sep*
+				    filename))
+			   (t
+			    (format nil "~a~a~a"
+				    *translation-file-root*
+				    *directory-sep*
+				    filename)))))
     (cond
       ((scan +pofile-ext+ actual-filename)
        (if-not-utf8-read-whole (actual-filename)
@@ -137,19 +223,18 @@
       (setf *plural-form-function* local-plural-function))
     (values t-table local-plural-function)))
 
-
-
 (defun load-language (catalog &key (locale *locale*) (categories *categories*)
 		      (store-plural-function t) (store-hashtable t)
 		      (update-translation-table t))
-  "Load a language that will be used for all subsequent translations."
+  "Load a language that will be used for all subsequent translations.
+   Pass the evaluation results of (find-locale) to let the library guess the current locale.
+   Use a locale string to explicitly set a locale instead."
   (let ((*locale* locale)
 	(*categories* categories))
     (init-translation-table catalog 
 			    :store-hashtable store-hashtable
 			    :store-plural-function store-plural-function
 			    :update-translation-table update-translation-table)))
-
 
 (defun translate (str)
   "Translate a string. This will raise an error if the translation table has not been
@@ -175,7 +260,6 @@
 	  (cons (apply (first translation) (rest translation)))
 	  (t (format nil "~A" translation))))))
 
-
 (defun ntranslate (str1 str2 n)
   "Translate a string guessing a plural form.
    str1 is the string to be translated
@@ -200,7 +284,6 @@
 	(if (= n 1)
 	    str1
 	    str2))))
-
 	   
 (defun read-lisp-string (input)
   "Parse a Lisp string. Expects \"input\" to point to the
@@ -215,7 +298,6 @@
           (#\"
            (return)))
         (write-char char output)))))
-
 
 (defmacro with-translation ((translations plural-function) &body body)
   "Macro to switch between language at runtime"

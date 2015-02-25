@@ -81,6 +81,7 @@
 	     :romanian-plural-form 
 	     :lithuanian-plural-form
 	     :slurp-file
+	     :*categories*
 	     :translation-list->hash-table
 	     :translation-hash-table->list
 	     :init-translation-table
@@ -108,7 +109,9 @@
 	     :+status+
 	     :+plurals+
 	     :*directory-sep-regexp*
-	     :*directory-sep*)
+	     :*directory-sep*
+	     :search-mo-repository
+	     :find-locale)
 	    (:documentation "An internationalisation framework for Common Lisp"))
 
 
