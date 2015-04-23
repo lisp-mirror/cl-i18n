@@ -84,12 +84,13 @@
 	     :*categories*
 	     :translation-list->hash-table
 	     :translation-hash-table->list
+	     :return-empty-translation-table
+	     :return-untranslated
 	     :init-translation-table
 	     :load-language 
 	     :save-language 
 	     :translate
 	     :ntranslate
-	     :return-untranslated
 	     :use-value
 	     :with-translation
 	     :with-po-file
