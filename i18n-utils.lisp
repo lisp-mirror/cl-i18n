@@ -7,12 +7,10 @@
 
 (in-package :cl-i18n-utils)
 
-
-
 (defun similar-phrase (phrase dict &key (threshold 3))
   "Scan the translation table looking for the best matching string of \"phrase\""
   (let ((min (list nil 1000)))
-    (maphash #'(lambda (k v) 
+    (maphash #'(lambda (k v)
 		 (let ((dist (levenshtein-distance phrase k))
 		       (trsl (cl-i18n:translated v)))
 			 (if (and
@@ -22,14 +20,16 @@
 			     (setf min (list trsl dist)))))
 	     dict)
     (first min)))
-				      
 
-(defun generate-i18n-file (source-filename localization-filename &key (fuzziness 3)
-			   (plural-function #'cl-i18n:english-plural-form))
-  "Reads a Lisp source file, get all #! strings and generate the translation
+(defun generate-i18n-file (source-filename localization-filename
+			   &key
+			     (fuzziness 3)
+			     (plural-function #'cl-i18n:english-plural-form)
+			     (prefix-re "#!\""))
+  "Reads a Lisp source file, get all strings and generate the translation
   resource, or merge with it if the translation resource already exists.
-  Untranslated strings that show levenshtein distance less than :fuzziness 
-  with a translated one get the translation of the latter; such translation 
+  Untranslated strings that show levenshtein distance less than :fuzziness
+  with a translated one get the translation of the latter; such translation
   are marked as \"fuzzy\" in the output file"
   (let* ((path-splitted (cl-ppcre:split cl-i18n:*directory-sep-regexp* localization-filename))
 	 (root (if (> (length path-splitted) 1)
@@ -39,7 +39,7 @@
 	 (output-filename (car (last path-splitted)))
 	 (output-filename-noext (if (cl-ppcre:scan-to-strings ".*\\." output-filename)
 				    (subseq (cl-ppcre:scan-to-strings ".*\\." output-filename)
-					    0 (1- (length 
+					    0 (1- (length
 						   (cl-ppcre:scan-to-strings ".*\\." output-filename))))
 				    output-filename))
 	 (cl-i18n:*translation-file-root* root))
@@ -50,7 +50,7 @@
 					:store-plural-function nil)
       (when (null readed-plural-function)
 	(setf readed-plural-function plural-function))
-      (let ((new-strings (get-strings source-filename)))
+      (let ((new-strings (get-strings source-filename prefix-re)))
 	(mapc #'(lambda (s) (when (not (gethash s i18n-table))
 			      (let ((similar (similar-phrase s i18n-table :threshold fuzziness)))
 				(setf (gethash s i18n-table)
@@ -62,21 +62,12 @@
 								    cl-i18n:+untranslated-flag+))))))
 	      new-strings)
 	(cl-i18n:save-language output-filename-noext nil i18n-table readed-plural-function)))))
-	  
 
-
-
-(defun get-strings (filename)
-  "Uses CL-PPCRE to get all strings on the form #!\"foo\",
-  and collect them uniquely in a list."
-  (let* ((sfile (cl-i18n:slurp-file filename))
-	 (matched (remove-duplicates (cl-ppcre:all-matches-as-strings "#!\".*?[^\\x5C]\"" sfile) :test #'string=))
-	 (new-strings (mapcar #'(lambda (s) (let ((replaced (cl-ppcre:regex-replace-all "(#!|\\x5C)" s "")))
-					      (subseq replaced 1 (1- (length replaced)))))
-			      matched)))
-    
-    new-strings))
-
+(defun get-strings (filename &optional (prefix-re "#!\""))
+  "Get all strings on the form 'prefix-re'\"foo\",  and collect them uniquely in a list."
+  (let ((cl-i18n:*extr-function-re* prefix-re))
+    (cl-i18n:with-extract-parsed-file (:filename filename)
+      (remove-duplicates (cl-i18n:parse-extract-parsed-file) :test #'string=))))
 
 (defun read-i18n-file (filename)
   "Reads the i18n file, if it exists, and put the strings into a hash table"
@@ -84,7 +75,6 @@
     (with-open-file (stream filename)
       (cl-i18n:translation-list->hash-table (read stream) (make-hash-table :test 'equal)))
     (make-hash-table :test 'equal)))
-
 
 (defun levenshtein-distance (string1 string2)
   "Compute the levenshtein distance (i. e. how much are similars) between two strings"
@@ -107,13 +97,15 @@
 			     (1+ (matrix-elt mat i (1+ j))) ; a deletion
 			     (1+ (matrix-elt mat (1+ i) j)) ; an insertion
 			     (1+ (matrix-elt mat i j))))))) ; a substitution
-	
+
 	(values (matrix-elt mat l2 l1) mat)))))
 
-(defun gen-translation-file (path output &key (ext "lisp$"))
-  "Scan a directory for sources files and collect all translatable strings. 
+(defun gen-translation-file (path output &key
+					   (ext "lisp$")
+					   (prefix-re "#!\""))
+  "Scan a directory for sources files and collect all translatable strings.
    The strings are merged with a translation file (if exists)"
-  (mapc #'(lambda (f) (generate-i18n-file (namestring f) output))
+  (mapc #'(lambda (f) (generate-i18n-file (namestring f) output :prefix-re prefix-re))
 	(remove-if-not #'(lambda (p) (cl-ppcre:scan ext (file-namestring p)))
 		       (uiop/filesystem:directory-files path))))
 
@@ -125,7 +117,7 @@
       (format nil "~s~%(~%~a)~%"
 	      (symbol-name plural-function)
 	      (with-output-to-string (ostream)
-		(loop 
+		(loop
 		   for ct = 0 then (+ ct 3) while (< ct (length old-format)) do
 		     (progn
 		       (format ostream "~a ~s~%~a ~s~%~a ~s~%~a ~s~%~a ~s~%"

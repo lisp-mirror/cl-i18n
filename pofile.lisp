@@ -22,50 +22,84 @@
 (alexandria:define-constant +number+ "0|[1-9][0-9]+|[1-9]" :test 'string=)
 
 (alexandria:define-constant +and-op+ "&&" :test 'string=)
+
 (alexandria:define-constant +or-op+ "||" :test 'string=)
+
 (alexandria:define-constant +or-op-regex+ "\\|\\|" :test 'string=)
+
 (alexandria:define-constant +<+  "<" :test 'string=)
+
 (alexandria:define-constant +>+  ">" :test 'string=)
+
 (alexandria:define-constant +<=+  "<=" :test 'string=)
+
 (alexandria:define-constant +>=+  ">=" :test 'string=)
+
 (alexandria:define-constant +!=+  "!=" :test 'string=)
+
 (alexandria:define-constant +==+  "==" :test 'string=)
+
 (alexandria:define-constant +%+  "%" :test 'string=)
+
 (alexandria:define-constant +?+  "?" :test 'string=)
+
 (alexandria:define-constant +?-regex+  "\\?" :test 'string=)
+
 (alexandria:define-constant +colon+  ":" :test 'string=)
+
 (alexandria:define-constant +open-paren+  "(" :test 'string=)
+
 (alexandria:define-constant +close-paren+  ")" :test 'string=)
+
 (alexandria:define-constant +end-expression+  ";" :test 'string=)
+
 (alexandria:define-constant +open-paren-regex+  "\\(" :test 'string=)
+
 (alexandria:define-constant +close-paren-regex+  "\\)" :test 'string=)
+
 (alexandria:define-constant +var+  "n" :test 'string=)
 
 (alexandria:define-constant +escape-newline+ "\\" :test 'equalp)
+
 (alexandria:define-constant +escaped-string-delim+ "\"" :test 'string=)
+
 (alexandria:define-constant +escape-string-escape-char+ "\\" :test 'equalp)
+
 (alexandria:define-constant +escape-string-escaped-newline+ "n" :test 'equalp)
+
 (alexandria:define-constant +newline+ #\NewLine :test 'equalp)
+
 (alexandria:define-constant +agnostic-comment+ "#" :test 'equalp)
+
 (alexandria:define-constant +flag-line+ "#,[ ]*" :test 'equalp)
+
 (alexandria:define-constant +flag-fuzzy+ "fuzzy" :test 'equalp)
 
 (alexandria:define-constant +msgid+ "msgid" :test 'equalp)
+
 (alexandria:define-constant +msgstr+ "msgstr" :test 'equalp)
+
 (alexandria:define-constant +msgid-regexp+ "msgid[ ]+" :test 'equalp)
+
 (alexandria:define-constant +msgstr-regexp+ "msgstr[ ]+" :test 'equalp)
+
 (alexandria:define-constant +msgstr[]+ "msgstr\\[[0-9]\\]" :test 'equalp)
+
 (alexandria:define-constant +msgstr[]-regexp+ "msgstr\\[[0-9]\\]" :test 'equalp)
+
 (alexandria:define-constant +msgid-plural+ "msgid_plural" :test 'equalp)
+
 (alexandria:define-constant +plural-form-label+ "Plural-Forms:" :test 'equalp)
+
 (alexandria:define-constant +nplurals-label+ "nplurals=" :test 'equalp)
+
 (alexandria:define-constant +plural-expression-label+ "plural=" :test 'equalp)
 
 (defparameter *boolean-op* (list +and-op+ +or-op+))
+
 (defparameter *compar-op* (list +>+ +<+ +>=+ +<=+ +==+ +!=+))
+
 (defparameter *aritm-op* (list +%+))
-
-
 
 (defparameter *n* 0)
 
@@ -73,7 +107,7 @@
   (if (= a b)
       1
       0))
-  
+
 (defun != (a b)
   (if (/= a b)
       1
@@ -114,12 +148,11 @@
       1
       0))
 
-
 (defun stack-if (&rest args)
   (let ((if-term (first args))
 	(then (second args))
 	(else (third args)))
-    (cond 
+    (cond
       ((numberp if-term)
        (if (/= 0 if-term)
 	   then
@@ -128,7 +161,7 @@
        (if if-term then else)))))
 
 (defun string->function (fun)
-  (cond 
+  (cond
     ((string= fun "||")
      #'bool-or)
     ((string= fun "?")
@@ -144,7 +177,6 @@
     (t
      (symbol-function (intern fun :cl-i18n)))))
 
-
 (defun unescaped-char (char)
   (cond
     ((string= char +escape-string-escaped-newline+)
@@ -154,7 +186,6 @@
     ((string= char #\")
      "\"")))
 
-
 (define-tokenizer (po-parsed-file +po-comment-line+ +open-paren-regex+ +close-paren-regex+ +number+ +and-op+ +or-op-regex+ +<+ +>+ +<=+ +>=+ +!=+ +==+ +%+ +?-regex+ +colon+ +var+ +end-expression+ +plural-expression-label+ +msgid-regexp+ +msgstr-regexp+ +flag-line+ +flag-fuzzy+ +msgstr[]-regexp+ +msgid-plural+)
     ((string= (char@) +escape-newline+)
      (multiple-increment 2)
@@ -162,24 +193,10 @@
   ((member (char@) *blank-space* :test #'string=)
    (increment-pointer *file*)
    (next-token *file*)))
-  
-  
-
-
-(defmacro define-is-stuff-p (test &rest operators)
-  (alexandria:with-gensyms (str)
-    `(progn
-       ,@(mapcar #'(lambda (op)
-		    `(defun ,(alexandria:format-symbol t "IS-~:@(~a~)-P" 
-						       (cl-ppcre:regex-replace-all "\\+" (symbol-name op) "")) 
-			 (,str)
-		       (,test ,op ,str)))
-		operators))))
 
 (define-is-stuff-p string= +and-op+ +or-op+ +<+ +>+  +<=+  +>=+  +!=+  +==+  +%+  +?+  +colon+  +open-paren+  +close-paren+ +var+ +end-expression+ +fuzzy-flag+)
 
 (define-is-stuff-p cl-ppcre:scan +msgid-regexp+ +msgstr-regexp+ +flag-line+ +msgstr[]-regexp+ +msgid-plural+)
-
 
 (defun is-number-p (str)
   (cl-ppcre:scan +number+ str))
@@ -188,12 +205,11 @@
   `(let-noerr ((,var (next-token *file*)))
        (with-error (,predicate ,msg ,@predicate-arg) ,@body)))
 
-
 (defun parse-any-operator (oper-list &key (test #'string=))
-  (parse-token (operator (lambda (v) (member v 
+  (parse-token (operator (lambda (v) (member v
 					     oper-list
 					     :test test))
-			 (format nil "Error: expected operator like ~{~a ~} got ~s instead." oper-list operator) 
+			 (format nil "Error: expected operator like ~{~a ~} got ~s instead." oper-list operator)
 			 operator)
     operator))
 
@@ -209,11 +225,10 @@
     #'string=
     *compar-op* *aritm-op* *boolean-op*)
 
-(define-parse-operators (parse-open-parent parse-close-parent 
+(define-parse-operators (parse-open-parent parse-close-parent
 					   parse-if-symbol parse-then-symbol)
     #'string=
     (list +open-paren+) (list +close-paren+) (list +?+) (list +colon+))
-
 
 (define-parse-operators (parse-msgid parse-msgstr
 				     parse-msgid-plural
@@ -221,7 +236,6 @@
     #'(lambda (a b) (cl-ppcre:scan b a))
   (list +msgid-regexp+) (list +msgstr-regexp+) (list +msgid-plural+)
   (list +msgstr[]-regexp+))
-
 
 (defun is-bool-op-p (str)
   (or (is-and-op-p str)
@@ -238,11 +252,9 @@
    (eq #'<* op)
    (eq #'>=* op)
    (eq #'<=* op)))
-   
 
 (defun is-ternary-operator (op)
   (eq #'stack-if op))
-
 
 (defnocfun parse-msgid-group ()
   (let-noerr ((msgid (parse-msgid))
@@ -260,13 +272,11 @@
      (setf (line-mode *file*) t)
      ,@body))
 
-
 (defnocfun parse-po-file ()
-  (with-line-mode  
+  (with-line-mode
       (let-noerr ((plural-function (parse-header))
 		  (entries (parse-entries)))
 	(values entries plural-function *has-errors* *parsing-errors*))))
-
 
 (defnocfun parse-entries (&optional (res (make-hash-table :test 'equal)))
   (with-no-errors
@@ -278,7 +288,7 @@
 	    (setf flag (alexandria:make-keyword (format nil "~:@(~a~)" (next-token *file*)))))
 	  (when-debug
 	    (format t "flag ~s~%errors ~s~%" flag *parsing-errors*))
-	  
+
 	  (let-noerr ((msgid (parse-msgid-group)))
 	    (when-debug
 	      (format t "msgid ~s errors ~s~%" msgid *parsing-errors*))
@@ -286,7 +296,7 @@
 		(parse-msgstr-group)
 	      (when-debug
 		(format t "msgsrt ~s ~s~%errors ~s~%" first-translation plural-forms *parsing-errors*))
-	      (let ((translation (make-translation 
+	      (let ((translation (make-translation
 				  (if (not (null plural-forms))
 				      (first plural-forms)
 				      first-translation)
@@ -316,17 +326,13 @@
 	 (setf *has-errors* t)
 	 (push "Junk found while parsing-for entries" *parsing-errors*))))))
 
-       
-	 
-       
-
 (defun parse-msgstr-plural-group (&optional (res '()))
   (with-no-errors
     (parse-msgstr-plural)
     (let-noerr ((string (parse-escaped-string)))
       (if (and (peek-valid-stream)
 	       (is-msgstr[]-regexp-p (peek-token *file*)))
-	  (progn 
+	  (progn
 	    (parse-msgstr-plural-group (push string res)))
 	  (reverse (push string res))))))
 
@@ -341,9 +347,8 @@
 (defun extract-plural-function (header)
   (when-debug
     (format t "header~%~s~%" header))
-
   (with-po-file (:buffer (cl-ppcre:regex-replace-all "(?m)\\n" header " "))
-    (with-no-errors 
+    (with-no-errors
       (next-token *file* :hook-to-stringpos nil);; the plural expression starts here
       (when-debug
 	(format t "plural-expr: ****~a***~%" (peek-token *file*)))
@@ -353,7 +358,6 @@
 	  (format t "stack (~%~{~s~%~})~% fun ~a 1 -> ~a~%" stack fun (funcall fun 1)))
 	fun))))
 
-  
 (defun parse-escaped-string (&optional (res "") (delimc nil))
   (if (peek-valid-stream)
       (handler-bind ((i18n-conditions:out-of-bounds
@@ -374,7 +378,7 @@
 		 (parse-escaped-string res delimc)))
 	    ((string= char +newline+)
 	     (cond
-	       ((or 
+	       ((or
 		 (string= (char@) " ")
 		 (string= (char@) +escaped-string-delim+)
 		 (string= (char@) +newline+))
@@ -386,14 +390,13 @@
 	      (concatenate 'string res char) delimc)))))
       res))
 
-
 (defun parse-plural-expression ()
   (let-noerr* ((peek (peek-token *file*))
 	       (stack (if (is-number-p peek)
 			  (list (parse-integer (next-token *file*)))
 			  (parse-ternary-expression))))
-    
-    (values #'(lambda (n) (let ((*n* n)) 
+
+    (values #'(lambda (n) (let ((*n* n))
 			    (execute-expression stack)))
 	    stack)))
 
@@ -402,7 +405,7 @@
     (if (not (is-end-expression-p (peek-token *file*)))
 	(let-noerr ((if-symbol (parse-if-symbol))
 		    (then-term (parse-expression)))
-	  (with-no-errors 
+	  (with-no-errors
 	    (parse-then-symbol)
 	    (let-noerr ((else-term (parse-expression)))
 	      (list (string->function if-symbol)
@@ -411,16 +414,13 @@
 		    else-term))))
 	(list first-term))))
 
-
 (defun parse-expression ()
   (let-noerr ((peek (peek-token *file*)))
-    (cond 
+    (cond
       ((is-number-p peek)
        (parse-integer (next-token *file*)))
       (t
        (parse-ternary-expression)))))
-
-
 
 (defun parse-boolean-expression (&optional (stack '()))
   (if (peek-valid-stream)
@@ -454,11 +454,10 @@
 	     (setf *has-errors* t)))))
       stack))
 
-	
 (defun parse-arithmetic-expression (&optional stack)
   (let ((local-stack '()))
-    (parse-token (var (lambda (v) (string= v +var+)) 
-		      (format nil "Error: expected ~s got ~s instead." +var+ var) 
+    (parse-token (var (lambda (v) (string= v +var+))
+		      (format nil "Error: expected ~s got ~s instead." +var+ var)
 		      var)
       (let-noerr ((operator (parse-any-operator (concatenate 'list *aritm-op* *compar-op*))))
 	(cond
@@ -479,13 +478,11 @@
 	       (push (string->function compare-op) local-stack))))))
       (push local-stack stack))))
 
-
 (defun parse-number ()
-  (parse-token (number (lambda (v) (cl-ppcre:scan +number+ v)) 
+  (parse-token (number (lambda (v) (cl-ppcre:scan +number+ v))
 		       (format nil "Error: Number expected got ~s instead." number)
 		       number)
     number))
-
 
 (defmacro pop-apply-binary-operator (stack operator)
   (alexandria:with-gensyms (op1 op2)
@@ -500,14 +497,12 @@
 	   (,else (pop ,stack)))
        (push (funcall ,operator ,if-term ,then ,else) ,stack))))
 
-
-
 (defun execute-expression (stack)
   (let ((exec-stack '()))
     (macrolet ((pop-stack (s) (pop s)))
       (labels ((execute ()
 		 (if (> (length stack) 0)
-		     (progn 
+		     (progn
 		       (let ((elem (pop stack)))
 			 (cond
 			   ((is-binary-operator elem)
@@ -526,5 +521,3 @@
 		     (pop exec-stack))))
 	(setf stack (reverse stack))
 	(execute)))))
-
-

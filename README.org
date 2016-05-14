@@ -26,12 +26,15 @@ Check the examples/ directory for an usage example.
 ** Extracting translatable strings:
 
 #+BEGIN_SRC common-lisp
-(cl-i18n-utils:gen-translation-file ("/src/" "klingon.lisp" :ext "lisp$"))
+(cl-i18n-utils:gen-translation-file ("/src/" "klingon.lisp"
+                                     :ext "lisp$"
+                                     :prefix-re "#!\""))
 #+END_SRC
 
-   Will extract  all #!  strings from all  the files in  directory "/src/"
-   which name ends  in "lisp" and set up a  basic translation resource in
-   klingon.lisp (*Note: the output file if exists will be overwritten*).
+   Will extract  all #!   strings[fn:re-extract-example] from  all the
+   files in directory  "/src/" which name ends in "lisp"  and set up a
+   basic translation resource in  klingon.lisp (*Note: the output file
+   if exists will be overwritten*).
 
    To make it work with CL-WHO, use the “str” directive, as in
 #+BEGIN_SRC common-lisp
@@ -93,7 +96,7 @@ however you can convert from the old format to the new one with:
 
   Examples are released under GPL version 3 or later
 
-  doc/internals/pofiles_grammar  is ©  2012 cage  and is  licensed under
+  =doc/internals/pofiles_grammar=  is ©  2012 cage  and is  licensed under
   Creative Commons Attribution-ShareAlike 3.0 Unported
 
   File /function-name.lisp/ was got from
@@ -139,3 +142,11 @@ however you can convert from the old format to the new one with:
 - Leslie P. Polzer <polzer@stardawn.org> (base)
 - Vilson Vieira <vilson@void.cc> (string extractor)
 - Cage <cage@katamail.com> (developer and maintainer)
+
+[fn:re-extract-example] If you use a function like:
+
+#+BEGIN_SRC common-lisp
+  (defun _ (a) (translate a))
+#+END_SRC
+
+You can use "=\\(_\\p{white_space}+=\"" as :prefix-re argument.

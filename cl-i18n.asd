@@ -44,18 +44,18 @@
 	       (:file "utx-file"
 		      :depends-on ("parser"
 				   "translation-class"))
-	       
 	       (:file "pofile"
 		      :depends-on ("parser"
 				   "translation-class"))
-
 	       (:file "mofile"
 		      :depends-on ("pofile"))
-               (:file "base" 
+	       (:file "extraction-translatable-strings"
+		      :depends-on ("parser"))
+               (:file "base"
 		      :depends-on ("plural-forms"
 				   "translation-class"
 				   "utx-file"
-				   "mofile"))
-               (:file "i18n-utils" 
+				   "mofile"
+				   "extraction-translatable-strings"))
+               (:file "i18n-utils"
 		      :depends-on ("base"))))
-

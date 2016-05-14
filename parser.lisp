@@ -10,14 +10,16 @@
 (alexandria:define-constant +peek-length-tokenizer-on-error+ 6 :test 'equal)
 
 (defparameter *file* "")
+
 (defparameter *string-pos* 0)
+
 (defparameter *has-errors* nil)
+
 (defparameter *parsing-errors* '())
 
 (defparameter *blank-space* '(#\space #\newline))
 
-
-(defclass parsed-file (buffered-input-file) 
+(defclass parsed-file (buffered-input-file)
   ((comment-line
     :initform nil
     :initarg :comment-line
@@ -27,11 +29,16 @@
 
 (defgeneric peek-token-suppress-errors (object &optional test))
 
-(defgeneric parse-comment-line (object ))
+(defgeneric parse-comment-line (object))
 
 (defgeneric is-comment-line-p (object line))
 
-(defgeneric next-token (object &key hook-to-stringpos))
+(defgeneric next-token (object &key hook-to-stringpos
+				 return-first-match
+				 predicate-sort-tokens
+				 no-more-token-error))
+
+(defgeneric next-token-simple (object &key no-more-token-error))
 
 (defmacro with-error ((predicate msg &rest arg-predicate) &body body)
   `(if (apply ,predicate (list ,@arg-predicate))
@@ -50,7 +57,6 @@
     `(with-no-errors
        ,(first forms)
        (with-no-errors* ,@(rest forms)))))
-
 
 (defmacro let-noerr (forms &body body)
   (if (not (null forms))
@@ -111,6 +117,29 @@
 	       (progn ,@body)
 	    (close-file *file*))))))
 
+(defmacro define-parser-skeleton* (package name classname &rest other-vars)
+  "does not close the stream"
+  (let ((macro-name (alexandria:format-symbol package "~:@(with-~a-file~)" name))
+	(other-v other-vars))
+    `(defmacro ,macro-name ((&key (buffer (make-buffer 2)) (filename nil)) &rest body)
+       `(let ((*file* (make-instance ',',classname :buffer ,buffer :filename ,filename))
+	      (*parsing-errors* '())
+	      (*has-errors* nil)
+	      ,@',other-v)
+	  (progn ,@body)))))
+
+(defmacro define-is-stuff-p (test &rest operators)
+  (alexandria:with-gensyms (str)
+    `(progn
+       ,@(mapcar #'(lambda (op)
+		    `(defun ,(alexandria:format-symbol t "IS-~:@(~a~)-P"
+						       (cl-ppcre:regex-replace-all "\\+|\\*"
+										   (symbol-name op)
+										   ""))
+			 (,str)
+		       (,test ,op ,str)))
+		operators))))
+
 (defun char@ ()
   (restart-case
       (let ((char (get-char *file*)))
@@ -163,53 +192,114 @@
 (defmacro scanner-re (re)
   `(cl-ppcre:create-scanner ,re))
 
-(defmacro define-tokenizer ((classname &rest regexps)
-			    &body other-cond-clause)
-  (alexandria:with-gensyms (scan tokens max-match)
+(defun concatenate-regexps (regexps)
+  (format nil "~{(~a)~^|~}" regexps))
+
+(defmacro define-tokenizer-simple (classname &rest regexps)
+  (alexandria:with-gensyms (scanner register-number match start-re end-re line-length line-start)
+    (let ((class-name (alexandria:format-symbol t "~@:(~a~)" classname))
+	  (no-more-token-error (alexandria:format-symbol t "NO-MORE-TOKEN-ERROR")))
+      `(let ((,scanner (cl-ppcre:create-scanner ,(concatenate-regexps regexps))))
+	 (defmethod next-token-simple ((object ,class-name) &key (,no-more-token-error t))
+	   (declare (optimize (speed 3) (debug 0) (safety 0)))
+	   (multiple-value-bind (,register-number ,line-start ,line-length ,match ,start-re
+						  ,end-re)
+	       (regex-scan-line-simple object ,scanner)
+	     (declare (ignore ,line-start))
+	     (declare ((signed-byte 64) ,register-number ,line-start ,line-length
+	      	       ,start-re ,end-re))
+	     (declare (simple-string ,match))
+	       (if (>= ,register-number 0)
+		   (progn
+		     (seek *file* ,end-re)
+		     (values ,match ,start-re))
+		   (if (peek-end-stream :pos-offset 0)
+		       (if ,no-more-token-error
+			   (progn
+			     (setf *has-errors* t)
+			     (push "Error: stream ended without valid token found"
+				   *parsing-errors*))
+			   nil)
+		       (handler-bind ((i18n-conditions:out-of-bounds
+				       #'(lambda (c)
+					   (declare (ignore c))
+					   (invoke-restart 'ignore-error))))
+			 (seek *file* ,line-length)
+			 (char@1+)
+			 (next-token-simple object
+					    :no-more-token-error ,no-more-token-error))))))))))
+
+(defmacro define-tokenizer ((classname &rest regexps) &body other-cond-clause)
+  (alexandria:with-gensyms (scan tokens sorted-matches max-match)
     (let ((class-name (alexandria:format-symbol t "~@:(~a~)" classname)))
-      `(defmethod next-token ((object ,class-name) &key (hook-to-stringpos t))
+      `(defmethod next-token ((object ,class-name) &key
+						     (hook-to-stringpos t)
+						     (return-first-match nil)
+						     (predicate-sort-tokens #'(lambda (a b)
+										(> (length (first a))
+										   (length (first b)))))
+						     (no-more-token-error t))
 	 (if (peek-valid-stream)
 	     (let ((,tokens nil))
 	       (cond
 		 ,@other-cond-clause
 		 (t
-		  ,@(loop for r in regexps collect
-			 `(let ((,scan (multiple-value-list 
-					(regex-scan *file* 
-						    (scanner-re ,r)
-						    hook-to-stringpos))))
-			    (when (first ,scan)
-			      (push (list
-				     (first ,scan)  ; the token
-				     (second ,scan) ; where the token starts
-				     (third ,scan)) ; where the token ends
-				    ,tokens))))
-		  
+		  (block token-matching
+		    ,@(loop for r in regexps collect
+			   `(let ((,scan (multiple-value-list
+					  (regex-scan *file*
+						      ,r
+						      hook-to-stringpos))))
+			      (when (first ,scan)
+				(if return-first-match
+				    (progn
+				      (setf ,tokens
+					    (list
+					     (first ,scan)  ; the token
+					     (second ,scan) ; where the token starts
+					     (third ,scan))) ; where the token ends
+				      (return-from token-matching))
+				    (push (list
+					   (first ,scan)  ; the token
+					   (second ,scan) ; where the token starts
+					   (third ,scan)) ; where the token ends
+					  ,tokens))))))
 		  (if (not (null ,tokens))
-		      (let ((,max-match (first (sort ,tokens 
-						     #'(lambda (a b)
-							 (> (length (first a)) (length (first b))))))))
+		      (let* ((,sorted-matches (sort ,tokens predicate-sort-tokens))
+			     (,max-match (first ,sorted-matches)))
 			(seek *file* (third ,max-match))
 			(values (first ,max-match) (second ,max-match)))
-		      (if (peek-end-stream :pos-offset +peek-length-tokenizer-on-error+)
-			  (progn
-			    (setf *has-errors* t)
-			    (push "Error: stream ended without valid token found" *parsing-errors*)
-			    (string (char@))
-			    nil)
-			  (progn 
-			    (setf *has-errors* t)
-			    (push (format nil 
-					  "Error: stream ended without valid token found starting from ~s"
-					  (regex-scan *file* ,(format nil ".{~a}"
-								      +peek-length-tokenizer-on-error+) :sticky nil))
-				  *parsing-errors*)
-			    nil))))))
+		      (if no-more-token-error
+			  (if (peek-end-stream :pos-offset +peek-length-tokenizer-on-error+)
+			      (progn
+				(setf *has-errors* t)
+				(push "Error: stream ended without valid token found" *parsing-errors*)
+				(string (char@))
+				nil)
+			      (progn
+				(setf *has-errors* t)
+				(push (format nil
+					      "Error: stream ended without valid token found starting from ~s"
+					      (regex-scan *file*
+							  ,(format nil "(?s).{~a}"
+								   +peek-length-tokenizer-on-error+)
+							  :sticky t))
+				      *parsing-errors*)
+				nil))
+			  nil)))))
 	     nil)))))
 
 (defmacro defnocfun (name args &body body)
   `(defun ,(alexandria:format-symbol t "~:@(~a~)" name) (,@args)
-     (when (peek-valid-stream)
-       (parse-comment-line *file*))
-     ,@body))
-
+     ,@(let ((user-rest (eq (caar body) 'declare)))
+	    (append
+	     (if user-rest
+		 (list (car body))
+		 nil)
+	     (list
+	      `(when (peek-valid-stream)
+		 (parse-comment-line *file*)))
+	     (list
+	      (if user-rest
+		  `(progn ,@(rest body))
+		  `(progn ,@body)))))))

@@ -8,13 +8,18 @@
 (in-package :utx-file)
 
 (alexandria:define-constant +column+ "[^\\t\\n]+(\\t|\\n)" :test 'equalp)
-(alexandria:define-constant +column-id+ "[0-9]+\\t" :test 'equalp)
-(alexandria:define-constant +utx-ignored-line+ "(#.*\\r\\n)|(^\\p{white_space}+\\r\\n)|(^\\r\\n)" :test 'string=)
-(alexandria:define-constant +line-stopper+ #\NewLine :test 'char=)
-(alexandria:define-constant +status-forbidden+ "forbidden" :test 'string=)
-(alexandria:define-constant +plural-field+ "src:plural" :test 'string=)
-(alexandria:define-constant +status-field+ "term status" :test 'string=)
 
+(alexandria:define-constant +column-id+ "[0-9]+\\t" :test 'equalp)
+
+(alexandria:define-constant +utx-ignored-line+ "(#.*\\r\\n)|(^\\p{white_space}+\\r\\n)|(^\\r\\n)" :test 'string=)
+
+(alexandria:define-constant +line-stopper+ #\NewLine :test 'char=)
+
+(alexandria:define-constant +status-forbidden+ "forbidden" :test 'string=)
+
+(alexandria:define-constant +plural-field+ "src:plural" :test 'string=)
+
+(alexandria:define-constant +status-field+ "term status" :test 'string=)
 
 (defparameter *fields-position* (make-hash-table :test 'equal))
 
@@ -25,7 +30,6 @@
 (defmethod initialize-instance :after ((object utx-parsed-file) &key &allow-other-keys)
   (with-slots (comment-line) object
     (setf utx-file:comment-line +utx-ignored-line+)))
-
 
 (defmethod peek-token ((object utx-parsed-file) &optional (test #'identity))
   (if (cl-i18n:peek-valid-stream)
@@ -58,19 +62,14 @@
 	  (progn
 	    (cl-i18n:seek cl-i18n:*file* start)
 	    nil)))))
-	
-    
 
-
-(cl-i18n:define-parser-skeleton utx utx-parsed-file 
+(cl-i18n:define-parser-skeleton utx utx-parsed-file
    (*fields-position* (make-hash-table :test 'equal)))
-
 
 (cl-i18n:define-tokenizer (utx-file:utx-parsed-file +column+))
 
 (defun last-column-p (col)
   (char= (char col (1- (length col))) +line-stopper+))
-
 
 (defun row-src (row)
   (first row))
@@ -85,7 +84,6 @@
 	   (nth ,pos ,row)
 	   nil))))
 
-    
 (defun row-status (row)
   (get-field +status-field+ row))
 
@@ -95,27 +93,24 @@
 (defun status-forbidden-p (row)
   (string= +status-forbidden+ (row-status row)))
 
-
 (cl-i18n:defnocfun parse-utx-file ()
   (cl-i18n:with-no-errors
     (if (cl-i18n:peek-valid-stream)
 	(progn
 	  (parse-utx-column-description)
 	  (values (parse-utx-lines)
-		  #'cl-i18n:english-plural-form 
-		  cl-i18n:*has-errors* 
+		  #'cl-i18n:english-plural-form
+		  cl-i18n:*has-errors*
 		  cl-i18n:*parsing-errors*))
 	(values nil
-		#'cl-i18n:english-plural-form 
-		cl-i18n:*has-errors* 
+		#'cl-i18n:english-plural-form
+		cl-i18n:*has-errors*
 		cl-i18n:*parsing-errors*))))
-
 
 (defun parse-utx-column-description ()
   (let ((fields (trim-rows (parse-utx-line))))
     (loop for i from 0 below (length fields) do
 	 (setf (gethash (nth i fields) *fields-position*) i))))
-
 
 (defun min-column-number-p (row)
   (if (and row
@@ -126,7 +121,6 @@
 	      cl-i18n:*parsing-errors*)
 	nil)
       row))
-
 
 (defun trim-rows (rows &optional (bag (format nil "~a~a~a" #\Tab #\Newline #\Return)))
   (mapcar #'(lambda (c) (string-trim bag c))
@@ -168,16 +162,14 @@
   (cl-i18n:with-no-errors
     (if (cl-i18n:peek-valid-stream)
 	(let ((col (parse-utx-column)))
-	  (if col 
+	  (if col
 	      (if (not (last-column-p col))
 		  (append (list col) (parse-utx-line :look-for-comment nil))
 		  (list col))))
 	nil)))
-
 
 (defun parse-utx-column ()
   (cl-i18n:with-no-errors
     (if (cl-i18n:peek-valid-stream)
 	(cl-i18n:next-token cl-i18n:*file*)
 	nil)))
-

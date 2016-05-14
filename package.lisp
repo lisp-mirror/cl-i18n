@@ -5,7 +5,7 @@
 ;; (http://opensource.franz.com/preamble.html),
 ;; known as the LLGPL
 
-(defpackage :i18n-conditions (:use 
+(defpackage :i18n-conditions (:use
 			      :cl)
 	    (:export
 	     :no-translation-table-error
@@ -15,8 +15,7 @@
 	     :no-translation
 	     :out-of-bounds))
 
-
-(defpackage :cl-i18n (:use 
+(defpackage :cl-i18n (:use
 		      :cl
 		      :alexandria
 		      :cl-ppcre)
@@ -40,45 +39,48 @@
 	     :parse-comment-line
 	     :seek
 	     :get-line
+	     :with-extract-parsed-file
+	     :parse-extract-parsed-file
+	     :*extr-function-re*
 	     :translation
 	     :translated
 	     :flag
 	     :make-translation
 	     :define-plural-form
 	     :n/=1-plural-form
-	     :english-plural-form 
+	     :english-plural-form
 	     :german-plural-form
-	     :dutch-plural-form 
-	     :swedish-plural-form 
-	     :danish-plural-form 
-	     :norwegian-plural-form 
-	     :faroese-plural-form 
-	     :spanish-plural-form 
-	     :portuguese-plural-form 
-	     :italian-plural-form 
-	     :bulgarian-plural-form 
-	     :greek-plural-form 
-	     :finnish-plural-form 
-	     :estonian-plural-form 
-	     :hebrew-plural-form 
-	     :esperanto-plural-form 
-	     :hungarian-plural-form 
-	     :turkish-plural-form 
-	     :polish-plural-form 
-	     :slovenian-plural-form 
-	     :czech-plural-form 
-	     :slovak-plural-form 
-	     :russian-plural-form 
-	     :ukrainian-plural-form 
-	     :serbian-plural-form 
-	     :croatian-plural-form 
-	     :brazilian-plural-form 
-	     :portuguese-plural-form 
-	     :french-plural-form 
-	     :latvian-plural-form 
-	     :gaeilge-plural-form 
-	     :irish-plural-form 
-	     :romanian-plural-form 
+	     :dutch-plural-form
+	     :swedish-plural-form
+	     :danish-plural-form
+	     :norwegian-plural-form
+	     :faroese-plural-form
+	     :spanish-plural-form
+	     :portuguese-plural-form
+	     :italian-plural-form
+	     :bulgarian-plural-form
+	     :greek-plural-form
+	     :finnish-plural-form
+	     :estonian-plural-form
+	     :hebrew-plural-form
+	     :esperanto-plural-form
+	     :hungarian-plural-form
+	     :turkish-plural-form
+	     :polish-plural-form
+	     :slovenian-plural-form
+	     :czech-plural-form
+	     :slovak-plural-form
+	     :russian-plural-form
+	     :ukrainian-plural-form
+	     :serbian-plural-form
+	     :croatian-plural-form
+	     :brazilian-plural-form
+	     :portuguese-plural-form
+	     :french-plural-form
+	     :latvian-plural-form
+	     :gaeilge-plural-form
+	     :irish-plural-form
+	     :romanian-plural-form
 	     :lithuanian-plural-form
 	     :slurp-file
 	     :*categories*
@@ -87,15 +89,15 @@
 	     :return-empty-translation-table
 	     :return-untranslated
 	     :init-translation-table
-	     :load-language 
-	     :save-language 
+	     :load-language
+	     :save-language
 	     :translate
 	     :ntranslate
 	     :use-value
 	     :with-translation
 	     :with-po-file
 	     :with-mo-file
-	     :*translation-file-root* 
+	     :*translation-file-root*
 	     :*translation-collect*
 	     :*plural-form-function*
 	     :*has-error*
@@ -115,9 +117,7 @@
 	     :find-locale)
 	    (:documentation "An internationalisation framework for Common Lisp"))
 
-
-
-(defpackage :utx-file (:use 
+(defpackage :utx-file (:use
 		       :cl
 		       :alexandria
 		       :cl-ppcre)
@@ -132,8 +132,7 @@
 	     :parse-utx-file
 	     :with-utx-file))
 
-
-(defpackage :cl-i18n-utils (:use 
+(defpackage :cl-i18n-utils (:use
 			    :cl
 			    :alexandria
 			    :cl-ppcre)
