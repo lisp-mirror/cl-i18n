@@ -21,6 +21,9 @@
 (defparameter *translation-table* (make-hash-table :test 'equal)
   "The actual translation table used, it is an hashtable with the original (untranslated) string as key and an instance of the class translation as value")
 
+(defun translation-table ()
+  *translation-table*)
+
 (defun random-string (strings)
   (nth (random (list-length strings)) strings))
 
@@ -125,7 +128,7 @@
 	      (if plural-function
 		  (symbol-name (get-function-name plural-function))
 		  *plural-form-function*)
-	      (translation-hash-table->list 
+	      (translation-hash-table->list
 	       (if translation-table
 		   translation-table
 		   *translation-table*))))))
@@ -135,13 +138,13 @@
   `(if (utf8-encoded-p ,filename)
        (with-po-file (:filename ,filename)
 	 ,@body)
-       (with-po-file (:filename nil :buffer (slurp-file ,filename 
+       (with-po-file (:filename nil :buffer (slurp-file ,filename
 							:convert-to-string t))
 	 ,@body)))
 
-(defun init-translation-table (filename &key 
-			       (store-hashtable t) 
-			       (store-plural-function t) 
+(defun init-translation-table (filename &key
+			       (store-hashtable t)
+			       (store-plural-function t)
 			       (update-translation-table t))
   "Load translations from a file (*translation-file-root* is used as a
    prefix  for the actual  path), storing  them in  a hash  table.  if
@@ -176,7 +179,7 @@
 	     (multiple-value-bind (hashtable plural-function errorsp errors)
 		 (parse-po-file)
 	       (if errorsp
-		   (error 'i18n-conditions:parsing-pofile-error 
+		   (error 'i18n-conditions:parsing-pofile-error
 			  :text (format nil "~{~a~}" errors))
 		   (progn
 		     (setf local-plural-function plural-function)
@@ -186,19 +189,19 @@
 	     (multiple-value-bind (hashtable plural-function errorsp errors)
 		 (utx-file:parse-utx-file)
 	       (if errorsp
-		   (error 'i18n-conditions:parsing-utxfile-error 
+		   (error 'i18n-conditions:parsing-utxfile-error
 			  :text (format nil "~{~a~}" errors))
 		   (progn
 		     (setf local-plural-function plural-function)
 		     (setf t-table hashtable))))))
 	  ((scan +lisp-table-ext+ actual-filename)
-	   (handler-case 
+	   (handler-case
 	       (with-open-file (file actual-filename) :if-does-not-exist :error
 			       (setf local-plural-function (symbol-function
 							    (alexandria:format-symbol 'cl-i18n
 										      "~@:(~a~)"
 										      (read file))))
-			       (setf t-table (translation-list->hash-table (read file) 
+			       (setf t-table (translation-list->hash-table (read file)
 									   (make-hash-table
 									    :test 'equal))))
 	     (end-of-file () (setf local-plural-function #'english-plural-form
@@ -211,14 +214,14 @@
 	   (with-mo-file (stream mofile actual-filename)
 	     (parse-mofile mofile stream)
 	     (if (not (null (parsing-errors mofile)))
-		 (error 'i18n-conditions:parsing-mofile-error 
+		 (error 'i18n-conditions:parsing-mofile-error
 			:text (format nil "~{~a~}" (parsing-errors mofile)))
 		 (multiple-value-bind (hashtable plural-function)
 		     (mofile->translation mofile)
 		   (setf t-table hashtable)
 		   (setf local-plural-function plural-function))))))
 	(when update-translation-table
-	  (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v)) 
+	  (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v))
 		   *translation-table*))
 	(when store-hashtable
 	  (setf *translation-table* t-table))
@@ -236,7 +239,7 @@
    Use a locale string to explicitly set a locale instead."
   (let ((*locale* locale)
 	(*categories* categories))
-    (init-translation-table catalog 
+    (init-translation-table catalog
 			    :store-hashtable store-hashtable
 			    :store-plural-function store-plural-function
 			    :update-translation-table update-translation-table)))
@@ -256,7 +259,7 @@
 	(if *translation-collect*
 	    (setf (gethash str *translation-table*) (make-translation str))
 	    (progn
-	      (warn 'i18n-conditions:no-translation 
+	      (warn 'i18n-conditions:no-translation
 		    :text (format nil "cl-i18n: no translation for ~S defined!" str))
 	      str))
 	(typecase translation
@@ -270,8 +273,8 @@
    str1 is the string to be translated
    str2 is the fallback plural form
    n is the number of the objects
-   First str1 is checked to get the translated object, if found 
-   the nth element (as computed by the function *plural-form-function*) 
+   First str1 is checked to get the translated object, if found
+   the nth element (as computed by the function *plural-form-function*)
    of its plural-translated slot is used as plural form.
    If this index is less than 0 or more than the length of plural-translated
    ntranslate return str2.
@@ -289,7 +292,7 @@
 	(if (= n 1)
 	    str1
 	    str2))))
-	   
+
 (defun read-lisp-string (input)
   "Parse a Lisp string. Expects \"input\" to point to the
   first character after the leading double quote.
@@ -317,7 +320,7 @@
         `(translate ,(read-lisp-string stream))
         (error "cl-i18n: the read macro '#!' must precede a double-quoted string!"))))
 
-(set-dispatch-macro-character #\# #\§ 
+(set-dispatch-macro-character #\# #\§
   #'(lambda (stream char1 num)
       (declare (ignore char1))
       `(cl-i18n:ntranslate ,(read stream) ,(read stream) ,num)))

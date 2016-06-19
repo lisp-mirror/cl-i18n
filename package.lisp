@@ -89,6 +89,7 @@
 	     :return-empty-translation-table
 	     :return-untranslated
 	     :init-translation-table
+	     :translation-table
 	     :load-language
 	     :save-language
 	     :translate
