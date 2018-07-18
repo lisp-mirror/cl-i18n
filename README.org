@@ -27,9 +27,9 @@ Check the examples/ directory for an usage example.
 ** Extracting translatable strings:
 
 #+BEGIN_SRC common-lisp
-(cl-i18n-utils:gen-translation-file ("/src/" "klingon.lisp"
-                                     :ext "lisp$"
-                                     :prefix-re "#!\""))
+(cl-i18n-utils:gen-translation-file "/src/" "klingon.lisp"
+                                    :ext "lisp$"
+                                    :prefix-re "#!\"")
 #+END_SRC
 
    Will extract  all #!   strings[fn:re-extract-example] from  all the
@@ -84,7 +84,7 @@ however you can convert from the old format to the new one with:
 
 * Bugs and issues
 
-  Please send all bugs reports to cage@katamail.com
+  Please send all bugs reports to cage-dev at twistfold dot it
 
 ** Known issues
 - Documentation is missing;
@@ -140,9 +140,9 @@ however you can convert from the old format to the new one with:
 
 * Contributors:
 
-- Leslie P. Polzer <polzer@stardawn.org> (base)
-- Vilson Vieira <vilson@void.cc> (string extractor)
-- Cage <cage@katamail.com> (developer and maintainer)
+- Leslie P. Polzer  (base)
+- Vilson Vieira     (string extractor)
+- Cage              (developer and maintainer)
 
 [fn:re-extract-example] If you use a function like:
 
@@ -150,4 +150,4 @@ however you can convert from the old format to the new one with:
   (defun _ (a) (translate a))
 #+END_SRC
 
-You can use "=\\(_\\p{white_space}+=\"" as :prefix-re argument.
+You can use =\\(_\\p{white_space}+\"= as :prefix-re argument.
