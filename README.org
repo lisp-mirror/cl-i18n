@@ -84,7 +84,8 @@ however you can convert from the old format to the new one with:
 
 * Bugs and issues
 
-  Please send all bugs reports to cage-dev at twistfold dot it
+Please file bug report on
+the [[https://notabug.org/cage/cl-i18n/issues][issue tracker]].
 
 ** Known issues
 - Documentation is missing;
