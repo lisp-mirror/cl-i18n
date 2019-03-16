@@ -320,7 +320,8 @@
         `(translate ,(read-lisp-string stream))
         (error "cl-i18n: the read macro '#!' must precede a double-quoted string!"))))
 
-(set-dispatch-macro-character #\# #\§
+(set-dispatch-macro-character #\# #-lispworks #\§
+                                  #+lispworks #\SECTION-SIGN
   #'(lambda (stream char1 num)
       (declare (ignore char1))
       `(cl-i18n:ntranslate ,(read stream) ,(read stream) ,num)))
