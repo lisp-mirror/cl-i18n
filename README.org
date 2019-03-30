@@ -40,7 +40,7 @@ Check the examples/ directory for an usage example.
    To make it work with CL-WHO, use the “str” directive, as in
 #+BEGIN_SRC common-lisp
     (with-html-output *out*
-      (:p (str #!"Blood and honour!")))
+      (:p (str #!"Peace and love!")))
 #+END_SRC
 
    Please note that the library can accept gettext MO or PO files so
