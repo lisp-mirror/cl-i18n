@@ -100,9 +100,6 @@
 		cached-string (babel:octets-to-string buffer))))
     (setf uchars-count (length cached-string))))
 
-
-
-
 (defgeneric stream-length (object))
 
 (defgeneric actual-file-position (object &optional pos))
@@ -220,11 +217,32 @@
 	  (length ustring)))))
 
 (defmethod actual-file-position ((object buffered-input-file) &optional (pos nil))
-  (with-accessors ((stream inner-stream)
-		   (buffer buffer)) object
-    (if stream
-	(file-position stream pos)
-	(length buffer))))
+  (labels ((cat (&rest s)
+             (apply #'concatenate 'string s))
+           (pos-error (message)
+             (error (concatenate 'string
+                                 (format nil "The value for argument pos (~a) " pos)
+                                 message)))
+           (check-pos-valid ()
+             (when pos
+               (etypecase pos
+                 (integer
+                    (when (< pos 0)
+                      (pos-error "is not a positive integer")))
+                 (keyword
+                  (when (not (or (eq pos  :start)
+                                 (eq pos  :end)))
+                    (pos-error (cat "is not valid: accepted values are: :start or :end "
+                                    "(or a positive integer)"))))))))
+    (with-accessors ((stream inner-stream)
+		     (buffer buffer)) object
+      (if stream
+          (progn
+            (check-pos-valid)
+            (if pos
+	        (file-position stream pos)
+                (file-position stream)))
+	  (length buffer)))))
 
 (defmethod valid-stream-p ((object buffered-input-file))
   (with-accessors ((stream inner-stream)) object
@@ -293,7 +311,6 @@
 		   (uchars-count uchars-count)
 		   (logical-file-position logical-file-position)) object
     (with-file-position (inner-file-position object)
-
       (if (and stream
 	       (> logical-file-position 0)
 	       (> inner-file-position 0))
@@ -321,7 +338,6 @@
 		   (cached-string cached-string)
 		   (buffer-position buffer-position)
 		   (uchars-count uchars-count)) object
-
       (with-file-position (inner-file-position object)
 	(if (< inner-file-position (stream-length object))
 	    (with-ustring (old-string object)
