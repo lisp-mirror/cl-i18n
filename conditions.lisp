@@ -10,49 +10,43 @@
 (defmacro defcond (type)
   `(define-condition ,(alexandria:format-symbol t "TEXT-~a" (string-upcase type))
        (,type)
-       ((text 
-	 :initarg :text 
+       ((text
+	 :initarg :text
 	 :reader text))
      (:documentation "Error that set text")))
 
-
 (defcond error)
+
 (defcond warning)
 
-(define-condition parsing-pofile-error (text-error) 
+(define-condition parsing-pofile-error (text-error)
   ()
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	    (format stream "~a" (text condition)))))
 
-
-(define-condition parsing-mofile-error (text-error) 
+(define-condition parsing-mofile-error (text-error)
   ()
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	    (format stream "~a" (text condition)))))
 
-(define-condition parsing-utxfile-error (text-error) 
+(define-condition parsing-utxfile-error (text-error)
   ()
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	    (format stream "~a" (text condition)))))
 
-
-
-
-(define-condition no-translation-table-error (text-error) 
+(define-condition no-translation-table-error (text-error)
   ()
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	    (format stream "~a" (text condition)))))
-
 
 (define-condition no-translation (text-warning)
   ()
-  (:report (lambda (condition stream) 
+  (:report (lambda (condition stream)
 	     (format stream "~a" (text condition)))))
 
-
 (define-condition text-error (error)
-  ((text 
-    :initarg :text 
+  ((text
+    :initarg :text
     :reader text))
   (:documentation "Error that set text"))
 
@@ -64,12 +58,11 @@
   ()
   (:documentation "Null reference"))
 
-
 (define-condition out-of-bounds (error)
   ((seq
-    :initarg :seq 
+    :initarg :seq
     :reader seq)
    (idx
-    :initarg :idx 
+    :initarg :idx
     :reader idx))
    (:documentation "Error when you go out of bound"))

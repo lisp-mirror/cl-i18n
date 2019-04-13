@@ -7,16 +7,20 @@
 
 (in-package :cl-i18n)
 
-
 (alexandria:define-constant +fuzzy-flag+ :fuzzy :test 'eq)
+
 (alexandria:define-constant +untranslated-flag+ :untranslated :test 'eq)
+
 (alexandria:define-constant +translated-flag+ :translated :test 'eq)
 
-
 (alexandria:define-constant +id+ "id" :test 'string=)
+
 (alexandria:define-constant +translation+ "translation" :test 'string=)
+
 (alexandria:define-constant +plurals-form+ "plurals-form" :test 'string=)
+
 (alexandria:define-constant +status+ "status" :test 'string=)
+
 (alexandria:define-constant +plurals+ "plurals" :test 'string=)
 
 (defclass translation ()
@@ -46,7 +50,7 @@
 
 (defmethod print-object ((object translation) stream)
   (format stream "~a ~s~%~a ~s~%~a ~s~%~a ~s~%"
-	  +translation+ (translated object) 
+	  +translation+ (translated object)
 	  +plurals-form+ (plural-form object)
 	  +status+       (flag object)
 	  +plurals+ (plural-translated object)))
@@ -65,11 +69,11 @@
   (setf (plural-translated object) (copy-list (plural-translated old)))
   (setf (flag object) (flag old))
   object)
-  
+
 (defun make-translation (translation &optional (flag +untranslated-flag+)
 			 (plural-form "") (plural-translated '()))
   "Create an instance of a translation class"
-  (make-instance 'translation 
+  (make-instance 'translation
 		 :translated translation
 		 :flag       flag
 		 :plural-form plural-form
@@ -80,8 +84,8 @@
   (loop for key being the hash-keys of ht
 	and value being the hash-values of ht
 	collect (format nil "~a ~s~%~a ~s~%~a ~s~%~a ~s~%~a ~s~%"
-			+id+ key 
-			+translation+ (translated value) 
+			+id+ key
+			+translation+ (translated value)
 			+plurals-form+ (plural-form value)
 			+status+       (flag value)
 			+plurals+ (plural-translated value))))
@@ -92,7 +96,7 @@
   "Parse a list into a translation table."
   (when (and (> (length list) 0)
 	 (= (mod (length list) 10) 0))
-    (loop 
+    (loop
        for str = (nth 1 list)
        and translation = (nth 3 list)
        and plural-form = (nth 5 list)

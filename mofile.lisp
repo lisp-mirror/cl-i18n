@@ -61,7 +61,6 @@
 
     res))
 
-
 (defclass mofile ()
   ((mofile
     :initform nil
@@ -105,15 +104,18 @@
      (with-open-file (,stream ,mofile :direction :input :element-type +stream-element-type+ :if-does-not-exist :error)
        ,@body)))
 
-
 (defgeneric parse-magic-number (object stream))
+
 (defgeneric parse-original-strings (object stream))
+
 (defgeneric parse-translated-strings (object stream))
+
 (defgeneric parse-mofile (object stream))
+
 (defgeneric mofile->pofile (object))
+
 (defgeneric mofile->translation (object &optional originals translated
 					plural-function translations))
-
 
 (defmethod print-object :after ((object mofile) stream)
   (with-slots (magic-number version-number string-number offset-original offset-translations hashing-table-size hashing-table-offset original-strings translated-strings parsing-errors) object
@@ -149,17 +151,24 @@
 	   (values ,res object))))))
 
 (define-parse-header-chunk (version-number +string-num-byte-version-number+))
+
 (define-parse-header-chunk (string-number +string-num-byte-size+))
+
 (define-parse-header-chunk (offset-original +offset-original-byte-size+))
+
 (define-parse-header-chunk (offset-translations +offset-translation-byte-size+))
+
 (define-parse-header-chunk (hashing-table-size +hashing-table-size-byte-size+))
+
 (define-parse-header-chunk (hashing-table-offset +hashing-table-offset-byte-size+))
+
 (define-parse-header-chunk (original-string-length +original-strings-length-chunk-size+ nil))
+
 (define-parse-header-chunk (original-string-offset +original-strings-offset-chunk-size+ nil))
+
 (define-parse-header-chunk (translated-string-length +translated-strings-length-chunk-size+ nil))
+
 (define-parse-header-chunk (translated-string-offset +translated-strings-offset-chunk-size+ nil))
-
-
 
 (defmacro with-parse-strings-chunks ((stream start-offset chunk-size whole-chunk-size parse-length-fun parse-offset-func) mofile)
   (alexandria:with-gensyms (pos strings str-len str-offset str-bytes orig-strings)
