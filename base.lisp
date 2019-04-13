@@ -118,7 +118,10 @@
 		      (translation-table nil) (plural-function nil))
   "Save a translation table to a file, default path is *translation-file-root* \"/\" lang"
   (let ((output-file (or destination
-			 (concatenate 'string *translation-file-root* *directory-sep* lang ".lisp"))))
+			 (concatenate 'string
+                                      *translation-file-root*
+                                      *directory-sep* lang
+                                      ".lisp"))))
     (create-brand-new-file output-file)
     (with-open-file (file output-file
 			  :if-does-not-exist :create
@@ -133,7 +136,6 @@
 		   translation-table
 		   *translation-table*))))))
 
-
 (defmacro if-not-utf8-read-whole ((filename) &body body)
   `(if (utf8-encoded-p ,filename)
        (with-po-file (:filename ,filename)
@@ -143,9 +145,9 @@
 	 ,@body)))
 
 (defun init-translation-table (filename &key
-			       (store-hashtable t)
-			       (store-plural-function t)
-			       (update-translation-table t))
+			                  (store-hashtable t)
+			                  (store-plural-function t)
+			                  (update-translation-table t))
   "Load translations from a file (*translation-file-root* is used as a
    prefix  for the actual  path), storing  them in  a hash  table.  if
    store-hashtable is  t *translation-table*  is setf'd to  the loaded
@@ -153,83 +155,87 @@
    setf'd too. The *plural-form-function* is setf'd too"
   (let ((t-table (make-hash-table :test 'equal))
 	(local-plural-function nil))
-  (restart-case
-      (let ((actual-filename (cond
-			       ((typep *locale* 'locale-definition)
-				(or
-				 (fittest-actual-locale-file *locale* filename)
-				 ""))
-			       ((typep *locale* 'string)
-				(format nil "~a~a~a~a~a~a~a.mo"
-					*translation-file-root*
-					*directory-sep*
-					*locale*
-					*directory-sep*
-					*categories*
-					*directory-sep*
-					filename))
-			       (t
-				(format nil "~a~a~a"
-					*translation-file-root*
-					*directory-sep*
-					filename)))))
-	(cond
-	  ((scan +pofile-ext+ actual-filename)
-	   (if-not-utf8-read-whole (actual-filename)
-	     (multiple-value-bind (hashtable plural-function errorsp errors)
-		 (parse-po-file)
-	       (if errorsp
-		   (error 'i18n-conditions:parsing-pofile-error
-			  :text (format nil "~{~a~}" errors))
-		   (progn
-		     (setf local-plural-function plural-function)
-		     (setf t-table hashtable))))))
-	  ((scan +utx-ext+ actual-filename)
-	   (utx-file:with-utx-file (:filename actual-filename)
-	     (multiple-value-bind (hashtable plural-function errorsp errors)
-		 (utx-file:parse-utx-file)
-	       (if errorsp
-		   (error 'i18n-conditions:parsing-utxfile-error
-			  :text (format nil "~{~a~}" errors))
-		   (progn
-		     (setf local-plural-function plural-function)
-		     (setf t-table hashtable))))))
-	  ((scan +lisp-table-ext+ actual-filename)
-	   (handler-case
-	       (with-open-file (file actual-filename) :if-does-not-exist :error
-			       (setf local-plural-function (symbol-function
-							    (alexandria:format-symbol 'cl-i18n
-										      "~@:(~a~)"
-										      (read file))))
-			       (setf t-table (translation-list->hash-table (read file)
-									   (make-hash-table
-									    :test 'equal))))
-	     (end-of-file () (setf local-plural-function #'english-plural-form
-				   t-table (make-hash-table :test 'equal)))
-	     (file-error () (progn
-			      (create-brand-new-file actual-filename)
-			      (setf local-plural-function #'english-plural-form
-				    t-table (make-hash-table :test 'equal))))))
-	  (t ;;maybe a MO file?
-	   (with-mo-file (stream mofile actual-filename)
-	     (parse-mofile mofile stream)
-	     (if (not (null (parsing-errors mofile)))
-		 (error 'i18n-conditions:parsing-mofile-error
-			:text (format nil "~{~a~}" (parsing-errors mofile)))
-		 (multiple-value-bind (hashtable plural-function)
-		     (mofile->translation mofile)
-		   (setf t-table hashtable)
-		   (setf local-plural-function plural-function))))))
-	(when update-translation-table
-	  (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v))
-		   *translation-table*))
-	(when store-hashtable
-	  (setf *translation-table* t-table))
-	(when store-plural-function
-	  (setf *plural-form-function* local-plural-function))
-	(values t-table local-plural-function))
-    (return-empty-translation-table ()
-      (setf t-table (make-hash-table :test 'equal))))))
+    (restart-case
+        (let ((actual-filename (cond
+			         ((typep *locale* 'locale-definition)
+				  (or
+				   (fittest-actual-locale-file *locale* filename)
+				   ""))
+			         ((typep *locale* 'string)
+				  (format nil "~a~a~a~a~a~a~a.mo"
+					  *translation-file-root*
+					  *directory-sep*
+					  *locale*
+					  *directory-sep*
+					  *categories*
+					  *directory-sep*
+					  filename))
+			         (t
+				  (format nil "~a~a~a"
+					  *translation-file-root*
+					  *directory-sep*
+					  filename)))))
+          (flet ((to-sexp-table ()
+                   (handler-case
+	               (with-open-file (file actual-filename :if-does-not-exist :error)
+	                 (setf local-plural-function (symbol-function
+					              (alexandria:format-symbol 'cl-i18n
+								                "~@:(~a~)"
+								                (read file))))
+	                 (setf t-table (translation-list->hash-table (read file)
+							             (make-hash-table
+								      :test 'equal))))
+	             (end-of-file () (setf local-plural-function #'english-plural-form
+				           t-table (make-hash-table :test 'equal)))
+	             (file-error () (progn
+			              (create-brand-new-file actual-filename)
+			              (setf local-plural-function #'english-plural-form
+				            t-table (make-hash-table :test 'equal)))))))
+	    (cond
+	      ((scan +pofile-ext+ actual-filename)
+	       (if-not-utf8-read-whole (actual-filename)
+	         (multiple-value-bind (hashtable plural-function errorsp errors)
+		     (parse-po-file)
+	           (if errorsp
+		       (error 'i18n-conditions:parsing-pofile-error
+			      :text (format nil "~{~a~}" errors))
+		       (progn
+		         (setf local-plural-function plural-function)
+		         (setf t-table hashtable))))))
+	      ((scan +utx-ext+ actual-filename)
+	       (utx-file:with-utx-file (:filename actual-filename)
+	         (multiple-value-bind (hashtable plural-function errorsp errors)
+		     (utx-file:parse-utx-file)
+	           (if errorsp
+		       (error 'i18n-conditions:parsing-utxfile-error
+			      :text (format nil "~{~a~}" errors))
+		       (progn
+		         (setf local-plural-function plural-function)
+		         (setf t-table hashtable))))))
+	      ((scan +lisp-table-ext+  actual-filename)
+               (to-sexp-table))
+	    ((is-mo-file-p actual-filename :ext ".*" :test-magic-number t);;maybe a MO file?
+	     (with-mo-file (stream mofile actual-filename)
+	       (parse-mofile mofile stream)
+	       (if (not (null (parsing-errors mofile)))
+		   (error 'i18n-conditions:parsing-mofile-error
+			  :text (format nil "~{~a~}" (parsing-errors mofile)))
+		   (multiple-value-bind (hashtable plural-function)
+		       (mofile->translation mofile)
+		     (setf t-table hashtable)
+		     (setf local-plural-function plural-function)))))
+            (t
+             (to-sexp-table)))
+	    (when update-translation-table
+	      (maphash #'(lambda (k v) (setf (gethash k *translation-table*) v))
+		       *translation-table*))
+	    (when store-hashtable
+	      (setf *translation-table* t-table))
+	    (when store-plural-function
+	      (setf *plural-form-function* local-plural-function))
+	    (values t-table local-plural-function)))
+      (return-empty-translation-table ()
+        (setf t-table (make-hash-table :test 'equal))))))
 
 (defun load-language (catalog &key (locale *locale*) (categories *categories*)
 		      (store-plural-function t) (store-hashtable t)

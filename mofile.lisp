@@ -8,22 +8,34 @@
 (in-package :cl-i18n)
 
 (alexandria:define-constant +stream-element-type+ '(unsigned-byte 8) :test 'equalp)
-(alexandria:define-constant +mo-magic-number+ #x950412de :test '=)
+
 (alexandria:define-constant +string-num-byte-version-number+ 4 :test '=)
+
 (alexandria:define-constant +string-num-byte-size+ 4 :test '=)
+
 (alexandria:define-constant +offset-original-byte-size+ 4 :test '=)
+
 (alexandria:define-constant +offset-translation-byte-size+ 4 :test '=)
+
 (alexandria:define-constant +hashing-table-size-byte-size+ 4 :test '=)
+
 (alexandria:define-constant +hashing-table-offset-byte-size+ 4 :test '=)
 
 (alexandria:define-constant +original-strings-offset-size-chunk-size+ 8 :test '=)
+
 (alexandria:define-constant +original-strings-offset-chunk-size+ 4 :test '=)
+
 (alexandria:define-constant +original-strings-length-chunk-size+ 4 :test '=)
 
 (alexandria:define-constant +translated-strings-offset-size-chunk-size+ 8 :test '=)
+
 (alexandria:define-constant +translated-strings-offset-chunk-size+ 4 :test '=)
+
 (alexandria:define-constant +translated-strings-length-chunk-size+ 4 :test '=)
 
+(defun mo-magic-number-p (seq)
+  (or (equalp seq +mo-file-magic-number+)
+      (equalp seq (reverse +mo-file-magic-number+))))
 
 (defun 2byte->word (byte1 byte2)
   (let ((res #x00000000))
@@ -39,7 +51,7 @@
 
 (defun byte->int (bytes)
   (let ((res #x0000000000000000))
-    (loop 
+    (loop
        for i in bytes and
        ct = 0 then (+ ct 8) do
 	 (setf res
@@ -51,7 +63,7 @@
 
 
 (defclass mofile ()
-  ((mofile 
+  ((mofile
     :initform nil
     :accessor mofile)
    (magic-number
@@ -99,7 +111,7 @@
 (defgeneric parse-translated-strings (object stream))
 (defgeneric parse-mofile (object stream))
 (defgeneric mofile->pofile (object))
-(defgeneric mofile->translation (object &optional originals translated 
+(defgeneric mofile->translation (object &optional originals translated
 					plural-function translations))
 
 
@@ -109,18 +121,21 @@
       (format stream "Magic number #x~x~%Version ~d~%string number ~d~%offset original #x~x~%offset translation #x~x~%hashing-table-size ~d~%hashing-table-offset #x~x~%original strings: ~s~%translated strings ~s~%errors ~s" magic-number version-number string-number offset-original offset-translations hashing-table-size hashing-table-offset original-strings translated-strings parsing-errors))))
 
 (defmethod parse-magic-number ((object mofile) stream)
-  (let* ((bytes (loop for i from 0 below 4 collect (read-byte stream)))
+  (let* ((bytes (loop for i from 0 below (length +mo-file-magic-number+)
+                   collect (read-byte stream)))
 	 (magic-number (2word->int (2byte->word (fourth bytes) (third bytes))
-				    (2byte->word (second bytes) (first bytes)))))
-    (if (= magic-number +mo-magic-number+)
-	(progn 
+				   (2byte->word (second bytes) (first bytes)))))
+    (if (mo-magic-number-p bytes)
+	(progn
 	  (setf (magic-number object) magic-number)
 	  (values magic-number object))
 	(progn
-	  (push (format nil "Invalid magic-number ~x instead of ~x" magic-number +mo-magic-number+)
+	  (push (format nil "Invalid magic-number ~x instead of ~a"
+                        magic-number
+                        +mo-file-magic-number+)
 		(parsing-errors object))
 	  nil))))
-    
+
 
 (defmacro define-parse-header-chunk ((name size &optional (slot name)))
   (alexandria:with-gensyms (bytes res)
@@ -168,14 +183,14 @@
 		   (push ,orig-strings ,strings)))))
 	   (push (format nil "Invalid offset (~a) for original strings offset" ,start-offset)
 		 (parsing-errors ,mofile))))))
-  
+
 (defmethod parse-original-strings ((object mofile) stream)
   (with-accessors ((offset-original offset-original)
 		   (original-strings original-strings)) object
-    
-    (setf original-strings 
-	  (with-parse-strings-chunks (stream offset-original 
-					     +original-strings-offset-size-chunk-size+ 
+
+    (setf original-strings
+	  (with-parse-strings-chunks (stream offset-original
+					     +original-strings-offset-size-chunk-size+
 					     (+ offset-original (* (string-number object) +original-strings-offset-size-chunk-size+))
 					     parse-original-string-length
 					     parse-original-string-offset) object))
@@ -187,11 +202,11 @@
 		   (offset-translations offset-translations)
 		   (translated-strings translated-strings)) object
     (let ((end-chunk (+ offset-translations
-			(* (string-number object) 
+			(* (string-number object)
 			   +original-strings-offset-size-chunk-size+))))
-      (setf translated-strings 
+      (setf translated-strings
 	  (with-parse-strings-chunks (stream offset-translations
-					     +translated-strings-offset-size-chunk-size+ 
+					     +translated-strings-offset-size-chunk-size+
 					     end-chunk
 					     parse-translated-string-length
 					     parse-translated-string-offset) object))
@@ -207,7 +222,7 @@
   (parse-hashing-table-offset object stream)
   (parse-original-strings object stream)
   (parse-translated-strings object stream))
-  
+
 
 (defun split-escape (msg)
   (if (null msg)
@@ -222,7 +237,7 @@
   (with-accessors ((pofile pofile)
 		   (original-strings original-strings)
 		   (translated-strings translated-strings)) object
-    
+
     (labels ((concat (str)
 	       (setf pofile
 		     (concatenate 'string pofile str))))
@@ -230,7 +245,7 @@
 	(mapcar #'(lambda (orig)
 		    (concat (format nil "~a ~a" +msgid+ (split-escape (first orig))))
 		    (when (> (length orig) 1)
-		      (mapcar #'(lambda (plur) 
+		      (mapcar #'(lambda (plur)
 				  (concat (format nil "~a ~a" +msgid-plural+ (split-escape plur))))
 			      (rest orig)))
 		    (let ((ct-pl 0))
@@ -255,18 +270,14 @@
       (let ((translation (make-instance 'translation))
 	    (orig (first original))
 	    (transl (first translated)))
-	
+
 	(setf (translated translation) (first transl))
 	(if (> (length orig) 1)
 	    (setf (plural-form translation) (split-escape (second orig))))
-	
+
 	(do ((plural-form (rest transl) (rest plural-form)))
 	    ((null plural-form) (setf (plural-translated translation)
 				      (reverse (plural-translated translation))))
 	  (push (first plural-form) (plural-translated translation)))
 	(setf (gethash (first orig) translations) translation)
 	(mofile->translation object (rest original) (rest translated) plural-function translations))))
-
-
-  
-      

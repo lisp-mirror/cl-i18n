@@ -98,6 +98,7 @@
 	     :with-translation
 	     :with-po-file
 	     :with-mo-file
+             :mo-magic-number-p
 	     :*translation-file-root*
 	     :*translation-collect*
 	     :*plural-form-function*

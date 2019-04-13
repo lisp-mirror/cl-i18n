@@ -27,11 +27,13 @@
 
 (defparameter *well-known-mofile-path* '("/usr/share/locale/" "/usr/local/share/locale/"))
 
-(alexandria:define-constant +utx-ext+ "utx$" :test 'string=)
+(alexandria:define-constant +utx-ext+ "utx$"                              :test 'string=)
 
-(alexandria:define-constant +pofile-ext+ "po$" :test 'string=)
+(alexandria:define-constant +pofile-ext+ "po$"                            :test 'string=)
 
-(alexandria:define-constant +lisp-table-ext+ "lisp$" :test 'string=)
+(alexandria:define-constant +lisp-table-ext+ "lisp$"                      :test 'string=)
+
+(alexandria:define-constant +mo-file-magic-number+ '(#x95 #x04 #x12 #xde) :test #'equalp)
 
 (defmacro when-debug (&body body)
   `(when (not (null *debug*))
@@ -51,7 +53,7 @@
 
 (defun uchar-length (leading-byte)
   (let ((ones (do* ((ct 7 (1- ct))
-		    (bit (ldb (byte 1 ct) leading-byte) 
+		    (bit (ldb (byte 1 ct) leading-byte)
 			 (ldb (byte 1 ct) leading-byte))
 		    (ones-ct 0))
 		   ((= bit 0) ones-ct)
@@ -61,16 +63,16 @@
        1)
       ((= ones 1)
        0)
-      (t 
+      (t
        ones))))
 
 (defun utf8-encoded-p (file)
-  (with-open-file (stream file :direction :input 
-			  :if-does-not-exist :error 
+  (with-open-file (stream file :direction :input
+			  :if-does-not-exist :error
 			  ::element-type '(unsigned-byte 8))
     (let* ((leading-byte (read-byte stream))
 	   (leading-byte-length (uchar-length leading-byte)))
-      (cond 
+      (cond
 	((= leading-byte-length 0)
 	 nil)
 	((> leading-byte-length 6)
@@ -96,13 +98,34 @@
 	(uiop/filesystem:subdirectories d)
 	(uiop/filesystem:directory-files d))))
 
+(defun file-exists-p (f)
+  (uiop:file-exists-p f))
+
+(defun file-does-not-exists-p (filename)
+  (not (file-exists-p filename)))
+
+(defun file-size (filename)
+  (when (uiop/filesystem:file-exists-p filename)
+    (with-open-file (stream filename :direction :input :element-type '(unsigned-byte 8))
+      (file-length stream))))
+
 (defun remove-regular-files (entries)
   (remove-if #'(lambda (a) (not (directoryp a))) entries))
 
-(defun is-mo-file-p (path &optional (ext "mo"))
+(defun file-has-mo-magic-number-p (file)
+  (when (file-exists-p file)
+    (when (> (file-size file) (length +mo-file-magic-number+))
+      (let ((seq (make-list (length +mo-file-magic-number+) :initial-element 0)))
+        (with-open-file (stream file :direction :input :element-type '(unsigned-byte 8))
+          (read-sequence seq stream)
+          (cl-i18n:mo-magic-number-p seq))))))
+
+(defun is-mo-file-p (path &key (ext "\\.mo") (test-magic-number nil))
     (and (uiop/filesystem:file-exists-p path)
-	 (cl-ppcre:scan (concatenate 'string "\\." ext "$") 
-			(pathname->string path))))
+	 (cl-ppcre:scan (concatenate 'string ext "$")
+			(pathname->string path))
+         (or (not test-magic-number)
+             (file-has-mo-magic-number-p path))))
 
 (defun cat-parent-dir (parent direntry)
   (format nil "~a~a~a" parent *directory-sep* direntry))
@@ -128,12 +151,12 @@
       (let* ((dircount (/ (length db) 2))
 	     (mofile-count (loop for i from 1 below (length db) by 2 collect (nth i db)))
 	     (mofile-dir (loop for i from 0 below (length db) by 2 collect (symbol-name (nth i db))))
-	     (mofile-last-dir (mapcar 
+	     (mofile-last-dir (mapcar
 			       #'(lambda (dir) (car (last (cl-ppcre:split *directory-sep-regexp* dir))))
 			       mofile-dir))
 	     (mofile-valid-dir (remove-if #'null
-					  (mapcar #'(lambda (dir) 
-						      (cl-ppcre:scan-to-strings 
+					  (mapcar #'(lambda (dir)
+						      (cl-ppcre:scan-to-strings
 						       *valid-dir-mofile-repo* dir))
 						  mofile-last-dir)))
 	     (average-mofile-count (/ (reduce #'+ mofile-count :initial-value 0) dircount)))
@@ -170,13 +193,13 @@
       (incf count (count-mo-files-direct-children dirname))
       (loop for ent in dirs do
 	   (when (not (find ent seen :test (equals-path-fn)))
-	     (push ent seen) 
+	     (push ent seen)
 	     (when (and (directoryp ent)
 			(not (excluded-path-p ent)))
 	       (push ent stack))))))))
-    
+
 (defun search-mo-repository (root &key (max-path-depth 10))
-  (let ((seen nil)) 
+  (let ((seen nil))
     (labels ((get-max-count-dir (root)
 	       (let ((max-count (list "" 0)))
 		 (do-directory (dir) root

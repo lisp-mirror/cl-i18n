@@ -15,10 +15,11 @@
   :name "cl-i18n"
   :version "0.5.0"
   :encoding :utf-8
-  :maintainer "cage <cage-dev@twistfold.it>"
-  :author "Leslie P. Polzer, Vilson Vieira, cage <cage-dev@twistfold.it>"
+  :maintainer "cage"
+  :author "Leslie P. Polzer, Vilson Vieira, cage"
   :licence "LLGPL"
   :description "A gettext-style internationalisation framework for Common Lisp."
+  :bug-tracker "https://notabug.org/cage/cl-i18n/issues"
   :depends-on (:alexandria
 	       #-asdf3 :uiop
 	       :cl-ppcre-unicode
