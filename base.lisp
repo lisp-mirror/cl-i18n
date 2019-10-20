@@ -255,11 +255,16 @@
    initialized beforehand. If the string doesn't have a translation a warning
    is emitted as well and the original string returned."
   (restart-case
-    (when (and (eql (hash-table-count *translation-table*) 0) (not *translation-collect*))
-      (error 'i18n-conditions:no-translation-table-error :text "cl-i18n: translation table not initialized! Call \"load-language\" first."))
-    (load-language (value &optional (store-plural t)) (load-language value :store-plural-function store-plural))
-    (use-value (value) (setf *translation-table* value))
-    (return-untranslated () str))
+      (when (and (= (hash-table-count *translation-table*) 0)
+                 (not *translation-collect*))
+        (error 'i18n-conditions:no-translation-table-error
+               :text "cl-i18n: translation table not initialized! Call \"load-language\" first."))
+    (load-language (value &optional (store-plural t))
+      (load-language value :store-plural-function store-plural))
+    (use-value (value)
+      (setf *translation-table* value))
+    (return-untranslated ()
+      str))
   (multiple-value-bind (translation found) (gethash str *translation-table*)
     (if (or (not found) (string= (translated translation) ""))
 	(if *translation-collect*
