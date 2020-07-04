@@ -151,4 +151,4 @@ the [[https://notabug.org/cage/cl-i18n/issues][issue tracker]].
   (defun _ (a) (translate a))
 #+END_SRC
 
-You can use =\\(_\\p{white_space}+\"= as :prefix-re argument.
+You can use ~\\(_\\p{white_space}+\"~ as :prefix-re argument.
