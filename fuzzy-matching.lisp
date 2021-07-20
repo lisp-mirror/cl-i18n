@@ -34,7 +34,7 @@
    T---AB
 
 
-   Note: length of `template' must be shorter of equal to `sequence'.
+   Note: length of `template' must be shorter or equal to `sequence'.
 "
   (declare (simple-string sequence template))
   (labels ((initialize-cost-matrix ()
