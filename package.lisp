@@ -142,4 +142,6 @@
 	     :generate-i18n-file
 	     :gen-translation-file
 	     :convert-dictionary-format
-	     :convert-save-dictionary))
+	     :convert-save-dictionary
+             :levenshtein-distance
+             :fuzzy-match))

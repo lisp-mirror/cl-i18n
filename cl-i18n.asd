@@ -26,37 +26,39 @@
 	       :babel)
   :components ((:file "package")
 	       (:file "function-name"
-		      :depends-on ("package"))
+		:depends-on ("package"))
 	       (:file "utils"
-		      :depends-on ("package"))
+		:depends-on ("package"))
 	       (:file "conditions"
-		      :depends-on ("package"))
+		:depends-on ("package"))
 	       (:file "buffered-input-file"
-		      :depends-on ("utils"
-				   "conditions"
-				   "package"))
+		:depends-on ("utils"
+			     "conditions"
+			     "package"))
 	       (:file "plural-forms"
-		      :depends-on ("package"))
+		:depends-on ("package"))
 	       (:file "translation-class"
-		      :depends-on ("plural-forms"))
+		:depends-on ("plural-forms"))
 	       (:file "parser"
-		      :depends-on ("buffered-input-file"))
+		:depends-on ("buffered-input-file"))
 
 	       (:file "utx-file"
-		      :depends-on ("parser"
-				   "translation-class"))
+		:depends-on ("parser"
+			     "translation-class"))
 	       (:file "pofile"
-		      :depends-on ("parser"
-				   "translation-class"))
+		:depends-on ("parser"
+			     "translation-class"))
 	       (:file "mofile"
-		      :depends-on ("pofile"))
+		:depends-on ("pofile"))
 	       (:file "extraction-translatable-strings"
-		      :depends-on ("parser"))
+		:depends-on ("parser"))
                (:file "base"
-		      :depends-on ("plural-forms"
-				   "translation-class"
-				   "utx-file"
-				   "mofile"
-				   "extraction-translatable-strings"))
+		:depends-on ("plural-forms"
+			     "translation-class"
+			     "utx-file"
+			     "mofile"
+			     "extraction-translatable-strings"))
                (:file "i18n-utils"
-		      :depends-on ("base"))))
+		:depends-on ("base"))
+               (:file "fuzzy-matching"
+		:depends-on ("base"))))
