@@ -73,7 +73,8 @@
                                 nil
                                 (first a)))
                           res))
-                 ((= j new-j)
+                 ((or (= j new-j)
+                      (= i new-i))
                   (traceback costs
                              trace-col trace-row
                              new-i new-j
