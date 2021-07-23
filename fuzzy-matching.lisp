@@ -99,7 +99,7 @@
                  (all-costs         (list cost-similarity
                                           cost-deletion-row
                                           cost-deletion-col))
-                 (max                -1e10)
+                 (max               -1e10)
                  (max-pos           -1))
             (loop for ct from 0 below 3 do
               (when (> (elt all-costs ct)
@@ -119,7 +119,9 @@
                  (setf (aref trace-col i j) (1- i))
                  (setf (aref trace-row i j) j))))))
       (multiple-value-bind (start-i start-j)
-           (find-max costs)
-        (let ((trace (traceback costs trace-col trace-row start-i start-j)))
-          (values trace
-                  costs trace-col trace-row))))))
+          (find-max costs)
+        (when (and (> start-i 0)
+                   (> start-j 0))
+          (let ((trace (traceback costs trace-col trace-row start-i start-j)))
+            (values trace
+                    costs trace-col trace-row)))))))
