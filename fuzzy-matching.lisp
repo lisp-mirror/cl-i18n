@@ -11,7 +11,8 @@
                     &key
                       (similarity-match     5)
                       (similarity-mismatch -5)
-                      (penalty-weight       1))
+                      (penalty-weight       1)
+                      (char-comparison-fn #'char=))
   "Performs a Smith-Waterman affinity search.
    See: https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm
 
@@ -46,8 +47,9 @@
            (initialize-trace-matrix ()
              (initialize-cost-matrix))
            (similarity-value (i j)
-             (if (char= (elt sequence (1- i))
-                        (elt template (1- j)))
+             (if (funcall char-comparison-fn
+                          (elt sequence (1- i))
+                          (elt template (1- j)))
                  similarity-match
                  similarity-mismatch))
            (find-max (matrix)
