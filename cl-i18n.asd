@@ -5,7 +5,6 @@
 ;; (http://opensource.franz.com/preamble.html),
 ;; known as the LLGPL
 
-
 (defpackage #:cl-i18n-asd
   (:use :cl :asdf))
 
@@ -13,7 +12,7 @@
 
 (defsystem cl-i18n
   :name "cl-i18n"
-  :version "0.5.1"
+  :version "0.5.2"
   :encoding :utf-8
   :maintainer "cage"
   :author "Leslie P. Polzer, Vilson Vieira, cage"
