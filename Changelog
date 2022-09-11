@@ -1,0 +1,481 @@
+2022-09-11 cage
+
+	* cl-i18n.asd,
+	* fuzzy-matching.lisp:
+
+	- allowed user specify a different char comparison function in
+	'fuzzy-match'.
+	- increased version number.
+
+2021-08-06 cage
+
+	* CHANGELOG,
+	* cl-i18n.asd:
+
+	- updated version and Changelog.
+
+2021-07-23 cage
+
+	* fuzzy-matching.lisp:
+
+	- prevented a crash in 'fuzzy-match' when there is no matching between
+	sequences.
+	- added workaround to deal with ties.
+
+2021-07-20 cage
+
+	* cl-i18n.asd,
+	* fuzzy-matching.lisp,
+	* package.lisp:
+
+	- added 'fuzzy-match'.
+	- exported 'levenshtein-distance'.
+	- fixed typo.
+
+2020-07-04 cage
+
+	* CHANGELOG,
+	* README.org:
+
+	- logged changes.
+	- fixed README.
+
+2019-10-20 cage
+
+	* base.lisp:
+
+	- fixed numeric test.
+
+2019-04-13 cage
+
+	* base.lisp,
+	* buffered-input-file.lisp,
+	* cl-i18n.asd,
+	* conditions.lisp,
+	* i18n-utils.lisp,
+	* mofile.lisp,
+	* package.lisp,
+	* plural-forms.lisp,
+	* translation-class.lisp,
+	* utils.lisp:
+
+	- fixed function actual-file-position
+	when  argument 'pos'  had value  'nil', if  a condition  was met,  the
+	function  cl:file-position was  called with  position-spec parameter
+	equals  to  nil:  nil  is  not a  valid  file  position  designator,
+	according to the specification.
+	Thanks to svenemtell for pointed that out!
+	- [bugfix] the library  did not save the  extracted translation string
+	in a file if the name of the latter did not terminate with extension
+	".lisp".
+	- cosmetic cleaning.
+
+2019-03-30 cage
+
+	* README.org:
+
+	- replaced an example string.
+
+2019-03-16 cage
+
+	* base.lisp:
+
+	- attempt to make the library loadable in lispworks.
+
+2018-10-09 cage
+
+	* README.org:
+
+	- using web issue tracker.
+
+2018-07-18 cage
+
+	* README.org,
+	* cl-i18n.asd:
+
+	- fixed email;
+	- fixed README.
+
+2017-10-07 cage
+
+	* README.org:
+
+	- cosmetic fix in README.
+
+2016-06-19 cage2
+
+	* base.lisp,
+	* package.lisp:
+
+	- exported a function to get the reference of the translation table.
+
+2016-05-14 cage2
+
+	* README.org,
+	* buffered-input-file.lisp,
+	* cl-i18n.asd,
+	* extraction-translatable-strings.lisp,
+	* i18n-utils.lisp,
+	* package.lisp,
+	* parser.lisp,
+	* pofile.lisp,
+	* utx-file.lisp:
+
+	- Rewritten an improved all the routines to extract strings that need
+	to be translated;
+	- source cleaned.
+
+2015-07-30 cage2
+
+	* README.org:
+
+	Added quicklisp badge
+
+2015-04-23 cage2
+
+	* base.lisp,
+	* package.lisp:
+
+	A better error handling
+
+2015-02-25 cage2
+
+	* README.org,
+	* base.lisp,
+	* examples/test.lisp,
+	* package.lisp,
+	* utils.lisp:
+
+	- [feature] add find-locale function.
+
+2015-02-24 cage2
+
+	* pofile.lisp:
+
+	- explicit package indication when interning symbol.
+
+2015-02-05 cage2
+
+	* README.org:
+
+	cl-i18n does not use osicat anymore
+
+2015-02-02 cage2
+
+	* cl-i18n.asd,
+	* utils.lisp:
+
+	- added dependency on uiop;
+	- fixed routines for i18n repository searching.
+
+2014-04-19 cage2
+
+	* cl-i18n.asd,
+	* i18n-utils.lisp,
+	* translation-class.lisp,
+	* utils.lisp:
+
+	Switching from osicat to uiop
+
+2014-01-16 cage2
+
+	* pofile.lisp:
+
+	Fixed warnings regarding a few functions
+
+2013-04-16 cage
+
+	* base.lisp,
+	* buffered-input-file.lisp,
+	* cl-i18n.asd,
+	* package.lisp,
+	* parser.lisp:
+
+	- [bugfix] added missing file in asd dependency;
+	- [bugfix] fixed a buffer in parser that prevented correct token
+	splitting;
+	- added file encoding in asdf file;
+	- added an useful macro in parser.lisp;
+	- minor change in base.lisp.
+
+2012-11-24 cage
+
+	* base.lisp,
+	* buffered-input-file.lisp,
+	* package.lisp,
+	* parser.lisp:
+
+	- add 'return-untranslated' restart in function translate;
+	- increased size of +default-buffer-size+;
+	- slightly rewrote of define-tokenizer;
+	- some minor clean-up and addition.
+
+2012-10-11 cage
+
+	* translation-class.lisp:
+
+	- [fix] removed quote from types in translation-class slots.
+
+2012-10-10 cage
+
+	* README.org,
+	* base.lisp,
+	* cl-i18n.asd,
+	* function-name.lisp,
+	* i18n-utils.lisp,
+	* package.lisp,
+	* utils.lisp:
+
+	- [fix] File generation for translation was broken.
+	- [fix] a quick patch for path with no directory separator.
+	- [fix] added missed function-name.lisp.
+
+2012-10-08 cage
+
+	* base.lisp,
+	* buffered-input-file.lisp,
+	* conditions.lisp,
+	* examples/test.lisp,
+	* package.lisp,
+	* parser.lisp,
+	* pofile.lisp:
+
+	- package conditions renamed to i18n-conditions;
+	- [fix] replace-buffer-backward did not "go back" properly;
+	- Added missing preamble in buffered-input-file.lisp;
+	- some others minor, mostly cosmetic, changes.
+
+2012-08-26 cage
+
+	* base.lisp,
+	* buffered-input-file.lisp,
+	* cl-i18n.asd,
+	* conditions.lisp,
+	* examples/locale/it.po,
+	* examples/locale/it.utx,
+	* examples/test.lisp,
+	* mofile.lisp,
+	* package.lisp,
+	* parser.lisp,
+	* pofile.lisp,
+	* utils.lisp,
+	* utx-file.lisp:
+
+	- PO file parsing optimized;
+	- UTX file support added;
+	- Some bugs fixed in buffered-input-file;
+	- Rearranged code for better modularity (parser.lisp implements a
+	generic parser).
+
+2012-07-25 cage
+
+	* COPYING,
+	* COPYING.LESSER,
+	* README.org,
+	* base.lisp,
+	* buffered-input-file.lisp,
+	* cl-i18n.asd,
+	* examples/locale/it.po,
+	* examples/locale/italian.lisp,
+	* examples/test.lisp,
+	* i18n-utils.lisp,
+	* mofile.lisp,
+	* pofile.lisp,
+	* translation-class.lisp,
+	* utils.lisp:
+
+	- Native format file for dictionary changed again (now save the plural
+	function too);
+	- [API changes] init-translation-table use *translation-file-root* to
+	figure out the path of the translation dictionary file;
+	- [API changes] load-translation can use a new gettext-like style API;
+	- added license files;
+	- improved MO file parsing speed;
+	- added a function to scan filesystem for GNU gettext catalog files.
+
+2012-02-15 cage
+
+	* README.org,
+	* base.lisp,
+	* cl-i18n.asd,
+	* conditions.lisp,
+	* doc/internals/pofiles_grammar,
+	* examples/test.lisp,
+	* i18n-utils.lisp,
+	* mofile.lisp,
+	* package.lisp,
+	* pofile.lisp,
+	* utils.lisp:
+
+	-[feature] Loading of Gettext MO files added;
+	-[fix] slurp-file optimized.
+
+2012-02-05 cage
+
+	* base.lisp,
+	* cl-i18n.asd,
+	* examples/test.lisp,
+	* package.lisp,
+	* pofile.lisp,
+	* translation-class.lisp,
+	* util.lisp => i18n-utils.lisp,
+	* utils.lisp:
+
+	- [fix] Refactorized the code to prevent circular dependencies that
+	broke the building process (thanks Zach!);
+	- [fix] In test.lisp the plural form function was not correctly set
+	when loading  it.po file.
+	- debug flag set to nil
+
+2012-02-04 cage
+
+	* LICENSE,
+	* README.org,
+	* base.lisp,
+	* doc/internals/pofiles_grammar,
+	* pofile.lisp,
+	* util.lisp:
+
+	- added missing license information.
+	- [fix] in parse-arithmetic-expression a variable was not quoted when
+	inserted into the stack;
+	- [fix] slurp-file did not manages well multibyte text encoding (i.e.
+	UTF-8) files;
+	- a simple macro for debugging has been added.
+
+2012-02-03 cage
+
+	* README.org,
+	* base.lisp,
+	* cl-i18n.asd,
+	* conditions.lisp,
+	* doc/internals/pofiles_grammar,
+	* examples/locale/it.po,
+	* examples/locale/spanish.lisp,
+	* examples/test.lisp,
+	* package.lisp,
+	* plural-forms.lisp,
+	* pofile.lisp:
+
+	- [feature] added a minimal support for gettext po file format;
+	- [fix] plural form function for russian ukrainian serbian croatian
+	fixed.
+
+2012-01-14 cage
+
+	* README.org,
+	* base.lisp:
+
+	- Added some more documentation;
+	- fixed a typo in README
+
+2012-01-06 cage
+
+	* README,
+	* README.org,
+	* package.lisp,
+	* plural-forms.lisp:
+
+	- some more plural form function added
+	- modified define-plural-form to accepts a list of language name
+	Removed old README file
+	- Added a note in README.org
+
+2012-01-01 cage
+
+	* README.org,
+	* examples/test.lisp,
+	* package.lisp,
+	* plural-forms.lisp:
+
+	- [fix] exported special variable *plural-form-function*;
+	- added polish and slovenian plural-forms function;
+	- Added a README in org-mode format;
+	- improved example.
+
+2011-12-28 cage
+
+	* CHANGELOG,
+	* LICENSE,
+	* README,
+	* base.lisp,
+	* cl-i18n.asd,
+	* cl-i18n.lisp,
+	* conditions.lisp,
+	* examples/locale/italian.lisp,
+	* examples/locale/spanish.lisp,
+	* examples/test.lisp,
+	* package.lisp,
+	* plural-forms.lisp,
+	* util.lisp:
+
+	Added license file and preamble for each source file.
+	Added missing license preamble
+	- File format of the translation table changed;
+	- Added a simple method to deal with plural form;
+	- Added  an an  approximated  matching algorithm  in  the file
+	scanning
+	routines for translatable string;
+	- Added examples directory;
+	- Refactoring of code.
+
+2008-07-30 polzer
+
+	* base.lisp,
+	* util.lisp:
+
+	Collect undefined translations (by Robin Lee Powell); some minor
+	changes.
+	darcs-hash:20080730070526-d5756-fe54c006c30de10ecd0691b1a9a32df0e47200a1.gz
+	Allow setting the destination filename in SAVE-LANGUAGE.
+	darcs-hash:20080730071017-d5756-c25fb68910b698d9afd0dbd53a88e4ec1cb10af0.gz
+
+2008-01-25 polzer
+
+	* base.lisp:
+
+	Empty strings pass as untranslated; added function call capability;
+	added RANDOM-STRING
+	darcs-hash:20080125134700-d5756-fc92328cab3bba409e4e80b1dfcf5a9c9d09e85e.gz
+
+2008-01-11 polzer
+
+	* README,
+	* base.lisp:
+
+	added cl-who example to README.
+	darcs-hash:20080111143442-d5756-5d4b4091b88a436068550134209fe78935b3761d.gz
+	load-language will now also take a symbol instead of a string.
+	darcs-hash:20080111152126-d5756-806549130281cfff5b664ed02dbb83f0bb06610f.gz
+
+2008-01-08 polzer
+
+	* CHANGELOG,
+	* README,
+	* base.lisp,
+	* cl-i18n.asd,
+	* cl-i18n.lisp,
+	* i18n-util.lisp,
+	* util.lisp:
+
+	Code base refactoring. Merging capability. Both by Vilson Vieira.
+	darcs-hash:20080108142245-d5756-b77e8dbf310147897d5beb54a4c29d6aa3cb16bc.gz
+
+2008-01-07 polzer
+
+	* README,
+	* cl-i18n.asd,
+	* cl-i18n.lisp,
+	* i18n-util.lisp:
+
+	Added README. Added i18n-utils by Vilson Vieira. Added documentation.
+	Bump to 0.3.
+	darcs-hash:20080107120505-d5756-942e9a329c0c0b85352b928e65b62b338f9037ab.gz
+
+2007-12-21 polzer
+
+	* cl-i18n.asd,
+	* cl-i18n.lisp:
+
+	added ASDF file, added core
+	darcs-hash:20071221143620-d5756-1e2369e2671b935eb8565b9693718279e01647a3.gz
