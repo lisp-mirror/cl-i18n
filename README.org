@@ -20,6 +20,7 @@ The  best  way   to  get  cl-i18n  working  is   using  the  excellent
   This library can load translations from file formats of the following types:
 - [[https://www.gnu.org/software/gettext/][GNU gettext]] text file (AKA PO files);
 - [[https://www.gnu.org/software/gettext/][GNU gettext]] binary file (AKA MO files);
+- [[https://web.archive.org/web/20190407131733/https://www.aamt.info/english/utx/index.htm][Universal Terminology eXchange]] format
 - its native file formats (essentially a Common lisp S-exp).
 
 Check the examples/ directory for an usage example.
@@ -70,6 +71,15 @@ We also let the library guess the right locale with /find-locale/.
    (format t "~a~%"  #!"Browse")
    (format t "~a~%" #!"Save as..."))
 #+END_SRC
+
+* String utils
+
+  Developing this library I have implemented a couple of string functions that I think could be useful beyond i18n.
+
+  - cl-i18n-utils:levenshtein-distance (string1 string2) :: Compute the levenshtein distance (i. e. how much are similars) between two strings
+
+  - cl-i18n-utils:fuzzy-match (...) ::  Performs a Smith-Waterman affinity search.
+   See: https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm
 
 * Old version incompatibility
 

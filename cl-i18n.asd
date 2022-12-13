@@ -61,3 +61,12 @@
 		:depends-on ("base"))
                (:file "fuzzy-matching"
 		:depends-on ("base"))))
+
+(defsystem #:cl-i18n/tests
+  :description "Unit tests for cl-i18n."
+  :author "cage"
+  :license "LLGPL"
+  :serial t
+  :components ((:file "test"))
+  :depends-on (:cl-i18n
+               :clunit2))
