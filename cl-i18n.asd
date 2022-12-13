@@ -12,7 +12,7 @@
 
 (defsystem cl-i18n
   :name "cl-i18n"
-  :version "0.5.2"
+  :version "0.5.3"
   :encoding :utf-8
   :maintainer "cage"
   :author "Leslie P. Polzer, Vilson Vieira, cage"

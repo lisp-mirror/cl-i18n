@@ -1,3 +1,12 @@
+2022-12-13 cage
+
+        * README.org,
+        * cl-i18n.asd,
+        * test.lisp:
+
+        - added test suite;
+        - updated docs.
+
 2022-09-11 cage
 
 	* cl-i18n.asd,
