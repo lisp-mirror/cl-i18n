@@ -23,25 +23,37 @@ The  best  way   to  get  cl-i18n  working  is   using  the  excellent
 - [[https://web.archive.org/web/20190407131733/https://www.aamt.info/english/utx/index.htm][Universal Terminology eXchange]] format
 - its native file formats (essentially a Common lisp S-exp).
 
-Check the examples/ directory for an usage example.
+Check the ~examples/~ directory for an usage example.
 
 ** Extracting translatable strings:
 
 #+BEGIN_SRC common-lisp
-(cl-i18n-utils:gen-translation-file "/src/" "klingon.lisp"
-                                    :ext "lisp$"
-                                    :prefix-re "#!\"")
+  ;; define two convenience functions
+
+  (defun _ (a) (cl-i18n:translate a))
+
+  (defun n_ (s f n) (cl-i18n:ntranslate s f n))
+
+  (cl-i18n-utils:gen-translation-file "/src/" "klingon.lisp"
+                                      :ext "lisp$"
+                                      :prefix-re "\\(_\\s+")
+
+  (cl-i18n-utils:gen-translation-file "/src/" "klingon.lisp"
+                                      :ext "lisp$"
+                                      :prefix-re "\\(n_\\s+")
+
 #+END_SRC
 
-   Will extract  all #!   strings[fn:re-extract-example] from  all the
-   files in directory  "/src/" which name ends in "lisp"  and set up a
+   Will extract  all ~(_…~   strings from  all the
+   files in directory  ~/src~ which name ends in "lisp"  and set up a
    basic translation resource in  klingon.lisp (*Note: the output file
    if exists will be overwritten*).
 
    To make it work with CL-WHO, use the “str” directive, as in
+
 #+BEGIN_SRC common-lisp
-    (with-html-output *out*
-      (:p (str #!"Peace and love!")))
+  (with-html-output *out*
+    (:p (str (_ "Peace and love!"))))
 #+END_SRC
 
    Please note that the library can accept gettext MO or PO files so
@@ -60,21 +72,21 @@ consuming and sometimes fails (i.e. crash).
 ** Simple example
 
 Here is  a way similar  to GNU gettext  style API; please note  we are
-assuming  "/usr/share/locale/" as the  path where  the catalog  can be
-found and foo.mo is there...
+assuming  ~/usr/share/locale/~ as the  path where  the catalog  can be
+found and foo.mo is there.
 
-We also let the library guess the right locale with /find-locale/.
+We also let the library guess the right locale with ~find-locale~.
 
 #+BEGIN_SRC common-lisp
-(let ((*translation-file-root* "/usr/share/locale/"))
-   (load-language "foo" :locale (find-locale))
-   (format t "~a~%"  #!"Browse")
-   (format t "~a~%" #!"Save as..."))
+  (let ((*translation-file-root* "/usr/share/locale/"))
+    (load-language "foo" :locale (find-locale))
+    (format t "~a~%" (_ "Browse"))
+    (format t "~a~%" (_ "Save as...")))
 #+END_SRC
 
 * String utils
 
-  Developing this library I have implemented a couple of string functions that I think could be useful beyond i18n.
+  During the development of this library I have implemented a couple of string functions that I think could be useful beyond i18n.
 
   - cl-i18n-utils:levenshtein-distance (string1 string2) :: Compute the levenshtein distance (i. e. how much are similars) between two strings
 
@@ -87,7 +99,7 @@ This version deeply changed the  file format of the translation table,
 however you can convert from the old format to the new one with:
 
 #+BEGIN_SRC common-lisp
-(cl-i18n-utils:convert-save-dictionary oldfile-path new-filepath)
+  (cl-i18n-utils:convert-save-dictionary oldfile-path new-filepath)
 #+END_SRC
 
 *Note: the output file if exists will be overwritten*
@@ -154,11 +166,3 @@ the [[https://notabug.org/cage/cl-i18n/issues][issue tracker]].
 - Leslie P. Polzer  (base)
 - Vilson Vieira     (string extractor)
 - Cage              (developer and maintainer)
-
-[fn:re-extract-example] If you use a function like:
-
-#+BEGIN_SRC common-lisp
-  (defun _ (a) (translate a))
-#+END_SRC
-
-You can use ~\\(_\\p{white_space}+\"~ as :prefix-re argument.
