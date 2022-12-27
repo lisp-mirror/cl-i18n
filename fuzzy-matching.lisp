@@ -37,7 +37,6 @@
 
    Note: length of `template' must be shorter or equal to `sequence'.
 "
-  (declare (simple-string sequence template))
   (labels ((initialize-cost-matrix ()
              (make-array (list (1+ (length sequence))
                                (1+ (length template)))
