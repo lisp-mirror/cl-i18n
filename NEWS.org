@@ -1,5 +1,10 @@
-- Version 0.5.2 2022-09-11
-  - the function ~fuzzy-match~ accept an arbitrary function for compare chars (using the keyword argument `char-comparison-fn').
+- Version 0.5.4 2022-12-27
+
+  - The function ~fuzzy-match~ no more expect  simple strings as argument.
+
+  Version 0.5.2 2022-09-11
+
+  - The function ~fuzzy-match~ accept an arbitrary function for compare chars (using the keyword argument `char-comparison-fn').
 
     By default the parameter values ~#'char=~ but, for example, a case insensitive comparison can be performed using ~char-equal~ instead.
 

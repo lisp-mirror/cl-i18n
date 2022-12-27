@@ -1,3 +1,11 @@
+2022-12-27 cage
+
+        * cl-i18n.asd,
+        * fuzzy-matching.lisp:
+
+        - removed declaration in 'fuzzy-match'.
+        - increased version number.
+
 2022-12-13 cage
 
         * README.org,
