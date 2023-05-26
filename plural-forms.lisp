@@ -62,7 +62,6 @@
 (define-plural-form ((russian ukrainian serbian croatian))
   (cond
     ((or
-      (= n 0)
       (and
        (= (mod n 10) 1)
        (/= (mod n 100) 11)))
