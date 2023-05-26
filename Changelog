@@ -1,10 +1,26 @@
+2023-05-26 Alexander Artemenko, cage
+
+        * cl-i18n.asd,
+        * plural-forms.lisp:
+
+        Fix Russian, Ukranian, Serbian and Crotian plural forms for "zero"
+        According to
+        https://docs.translatehouse.org/projects/localization-guide/en/latest/l10n/pluralforms.html
+        (russian-plural-form 0) should return 2 instead of 0.
+        Merge branch 'fix-russian-ukranian-serbian-crotian-plural' of
+        svetlyak40wt/cl-i18n into master
+        - increased version number.
+
 2022-12-27 cage
 
+        * Changelog,
+        * NEWS.org,
         * cl-i18n.asd,
         * fuzzy-matching.lisp:
 
         - removed declaration in 'fuzzy-match'.
         - increased version number.
+        - updated changelog and NEWS.org.
 
 2022-12-13 cage
 
