@@ -1,5 +1,7 @@
 [[http://quickdocs.org/cl-i18n/][http://quickdocs.org/badge/cl-i18n.svg]]
 
+* moved to [[https://codeberg.org/cage/cl-i18n]]
+
 * Prerequisites:
 - ASDF
 - uiop (if your ASDF version is < 3)
